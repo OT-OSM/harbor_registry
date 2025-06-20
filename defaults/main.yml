@@ -1,0 +1,6 @@
+---
+# defaults file for harbor_registry
+harbor_data_dir: "/data"
+harbor_cert_dir: "{{ harbor_data_dir }}/cert"
+harbor_admin_password: "Harbor12345"
+domain_name: "{{ ansible_host }}"

@@ -1,0 +1,12 @@
+---
+- name: Download Harbor installer
+  ansible.builtin.get_url:
+    url: "{{ harbor_installer_url }}"
+    dest: "/tmp/harbor-offline-installer.tgz"
+    mode: '0644'
+
+- name: Extract Harbor
+  ansible.builtin.unarchive:
+    src: "/tmp/harbor-offline-installer.tgz"
+    dest: "/opt"
+    remote_src: true

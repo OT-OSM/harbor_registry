@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  role_name: harbor_registry
+  namespace: opstree           # <-- 🔥 Required to satisfy Galaxy requirements
+  author: Sharvari Khamkar
+  description: Install and configure Harbor registry securely
+  company: Opstree
+  license: GPLv2
+  min_ansible_version: "2.9"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+  galaxy_tags:
+    - docker
+    - registry
+    - harbor
+    - opstree
