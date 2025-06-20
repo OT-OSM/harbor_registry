@@ -1,38 +1,66 @@
-Role Name
-=========
+# Ansible Role: Harbor Registry
 
-A brief description of the role goes here.
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/e20ece47-881d-4a9d-b3af-fc7209330939" width="550" alt="Harbor Logo"/>
+</p>
 
-Requirements
-------------
+A lightweight and reusable Ansible role to install and configure the [Harbor](https://goharbor.io) container registry with SSL support, custom admin credentials, and flexible configuration.
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+---
 
-Role Variables
---------------
+## Requirements
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+- Docker must be installed on the target system.
+- Docker Compose must be installed.
+- System Resource Requirements:
 
-Dependencies
-------------
+| Resource | Minimum     | Recommended |
+|----------|-------------|-------------|
+| CPU      | 2 vCPU      | 4 vCPU      |
+| Memory   | 4 GB RAM    | 8 GB RAM    |
+| Disk     | 40 GB Disk  | 160 GB Disk |
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+> For full details, refer to [Harbor Installation Prerequisites](https://goharbor.io/docs/2.13.0/install-config/installation-prereqs/)
 
-Example Playbook
-----------------
+---
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+## Role Variables
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+| Variable | Description | Default / Example |
+|---------|-------------|-------------------|
+| `harbor_hostname` | The domain or IP for accessing Harbor UI and registry. Must be reachable externally (do not use `localhost` or `127.0.0.1`). | `"registry.example.com"` |
+| `harbor_admin_password` | Initial password for the Harbor admin user. Used only during the first installation. | `"Harbor12345"` |
+| `harbor_certificate_path` | Path to the SSL certificate file (used by Nginx for HTTPS). | `"/data/cert/harbor.crt"` |
+| `harbor_private_key_path` | Path to the SSL private key file. | `"/data/cert/harbor.key"` |
 
-License
--------
+You can override these values in your playbook or inventory to customize your Harbor deployment.
 
-BSD
+---
 
-Author Information
-------------------
+## Dependencies
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+None.
+
+---
+
+## Example Playbook
+
+```yaml
+- name: Install and configure Harbor
+  hosts: harbor_servers
+  become: true
+  roles:
+    - role: harbor_registry
+      harbor_hostname: "registry.ldc.opstree.dev"
+      harbor_admin_password: "Harbor12345"
+      harbor_certificate_path: "/data/cert/harbor.crt"
+      harbor_private_key_path: "/data/cert/harbor.key" 
+```
+
+## License
+
+BSD License
+
+## Author
+
+Sharvari Khamkar
