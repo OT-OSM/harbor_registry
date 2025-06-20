@@ -1,0 +1,60 @@
+---
+hostname: {{ domain_name }}
+
+http:
+  port: 80
+
+https:
+  port: 443
+  certificate: {{ harbor_cert_dir }}/harbor.crt
+  private_key: {{ harbor_cert_dir }}/harbor.key
+
+harbor_admin_password: {{ harbor_admin_password }}
+data_volume: {{ harbor_data_dir }}
+
+database:
+  password: root123
+
+core:
+  secret: abcdefgh
+
+jobservice:
+  secret: abcdefgh
+  max_job_workers: 10
+  job_loggers:
+    - STD_OUTPUT
+    - FILE
+  logger_sweeper_duration: 1
+
+notification:
+  webhook_job_max_retry: 3
+  webhook_job_http_client_timeout: 3m
+
+registry:
+  storage_provider_name: filesystem
+
+log:
+  level: info
+  local:
+    rotate_count: 50
+    rotate_size: 200M
+    location: /var/log/harbor
+
+trivy:
+  ignore_unfixed: false
+  skip_update: false
+  offline_scan: false
+  security_check: vuln
+  insecure: false
+
+proxy:
+  http_proxy:
+  https_proxy:
+  no_proxy:
+  components:
+    - core
+    - jobservice
+    - trivy
+
+# Do NOT change this
+_version: 2.11.0

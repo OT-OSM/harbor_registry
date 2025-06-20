@@ -1,0 +1,12 @@
+---
+- name: Install prerequisites
+  ansible.builtin.import_tasks: prerequisites.yml
+
+- name: Install Docker
+  ansible.builtin.import_tasks: docker_install.yml
+
+- name: Install Harbor
+  ansible.builtin.import_tasks: harbor_install.yml
+
+- name: Configure and run Harbor
+  ansible.builtin.import_tasks: config_and_run.yml

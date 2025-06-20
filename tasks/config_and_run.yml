@@ -1,0 +1,16 @@
+---
+- name: Upload Harbor configuration
+  ansible.builtin.template:
+    src: harbor.yml.j2
+    dest: /opt/harbor/harbor.yml
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+
+- name: Run Harbor installation
+  ansible.builtin.command: ./install.sh
+  args:
+    chdir: /opt/harbor
+  changed_when: false
+  become: true
