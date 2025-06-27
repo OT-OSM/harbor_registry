@@ -1,8 +1,7 @@
 ---
 galaxy_info:
   role_name: harbor_registry
-  namespace: opstree           # <-- 🔥 Required to satisfy Galaxy requirements
-  author: Sharvari Khamkar
+  namespace: opstree           
   description: Install and configure Harbor registry securely
   company: Opstree
   license: GPLv2

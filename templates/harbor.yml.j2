@@ -9,17 +9,17 @@ https:
   certificate: {{ harbor_cert_dir }}/harbor.crt
   private_key: {{ harbor_cert_dir }}/harbor.key
 
-harbor_admin_password: {{ harbor_admin_password }}
+harbor_admin_password: {{ vault_harbor_admin_password }}
 data_volume: {{ harbor_data_dir }}
 
 database:
-  password: root123
+  password: {{ vault_harbor_db_password }}
 
 core:
-  secret: abcdefgh
+  secret: {{ vault_harbor_core_secret }}
 
 jobservice:
-  secret: abcdefgh
+  secret: {{ vault_harbor_core_secret }}
   max_job_workers: 10
   job_loggers:
     - STD_OUTPUT
@@ -56,5 +56,4 @@ proxy:
     - jobservice
     - trivy
 
-# Do NOT change this
 _version: 2.11.0

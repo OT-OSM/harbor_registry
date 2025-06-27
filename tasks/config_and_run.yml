@@ -14,3 +14,10 @@
     chdir: /opt/harbor
   changed_when: false
   become: true
+
+- name: Validate Harbor installation
+  ansible.builtin.shell: docker ps -a | grep "harbor-core"
+  register: harbor_check
+  changed_when: false
+  failed_when: harbor_check.rc != 0
+  become: true

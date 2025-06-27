@@ -1,15 +1,4 @@
 ---
-- name: Install required packages
-  ansible.builtin.apt:
-    name:
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
-    state: present
-    update_cache: true
-  become: true
-
 - name: Ensure Docker keyring directory exists
   ansible.builtin.file:
     path: "{{ docker_key_dir }}"
@@ -17,10 +6,12 @@
     mode: '0755'
   become: true
 
-- name: Download and install Docker GPG key
-  ansible.builtin.raw: curl -fsSL {{ docker_gpg_url }} | gpg --dearmor | tee {{ docker_key_path }} > /dev/null && chmod a+r {{ docker_key_path }}
+- name: Add Docker GPG key
+  ansible.builtin.get_url:
+    url: "{{ docker_gpg_url }}"
+    dest: "{{ docker_key_path }}"
+    mode: '0644'
   become: true
-  changed_when: false
 
 - name: Add Docker APT repository
   ansible.builtin.apt_repository:
@@ -45,7 +36,7 @@
     state: present
   become: true
 
-- name: Install docker-compose (binary)
+- name: Install docker-compose binary
   ansible.builtin.get_url:
     url: "{{ docker_compose_url }}"
     dest: /usr/local/bin/docker-compose
@@ -58,3 +49,10 @@
   ansible.builtin.command: docker-compose --version
   register: docker_compose_version
   changed_when: false
+
+- name: Ensure Docker is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+  become: true
