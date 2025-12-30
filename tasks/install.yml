@@ -1,0 +1,40 @@
+- name: Install prerequisites
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Create Harbor install directory
+  file:
+    path: "{{ harbor_install_dir }}"
+    state: directory
+    mode: '0755'
+
+
+- name: Set Harbor installer URL and filename
+  set_fact:
+    harbor_installer_url: >-
+      {{ harbor_offline_installer_url if harbor_installer_type == 'offline'
+         else harbor_online_installer_url }}
+    harbor_installer_tar: >-
+      {{ harbor_offline_installer_name if harbor_installer_type == 'offline'
+         else harbor_installer_name }}
+
+- name: Download Harbor installer
+  get_url:
+    url: "{{ harbor_installer_url }}"
+    dest: "{{ harbor_install_dir }}/{{ harbor_installer_tar }}"
+    mode: '0644'
+
+
+- name: Extract Harbor installer
+  unarchive:
+    src: "{{ harbor_install_dir }}/{{ harbor_installer_tar }}"
+    dest: "{{ harbor_install_dir }}"
+    remote_src: yes
+    creates: "{{ harbor_install_dir }}/harbor/install.sh"

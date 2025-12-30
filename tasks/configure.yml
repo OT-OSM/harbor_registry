@@ -1,0 +1,31 @@
+- name: Validate DB external flag
+  assert:
+    that:
+      - harbor_db_external is boolean
+
+- name: Validate Redis external flag
+  assert:
+    that:
+      - harbor_redis_external is boolean
+
+- name: Render harbor.yml
+  template:
+    src: harbor.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
+  no_log: true
+
+- name: Ensure Harbor data directory
+  file:
+    path: "{{ harbor_data_dir }}"
+    state: directory
+    owner: 10000
+    group: 10000
+
+
+- name: Validate Harbor hostname or external_url
+  fail:
+    msg: "Either harbor_hostname or harbor_external_url must be set"
+  when:
+    - harbor_hostname | default('') | length == 0
+    - harbor_external_url | default('') | length == 0
+

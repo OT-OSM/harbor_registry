@@ -1,0 +1,25 @@
+[Unit]
+Description=Harbor Container Registry
+Documentation=https://goharbor.io
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+
+# Harbor working directory
+WorkingDirectory={{ harbor_install_dir }}/harbor
+
+# Start Harbor (foreground so systemd can track it)
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose down
+
+# Restart behavior
+Restart=always
+RestartSec=10
+TimeoutStartSec=0
+TimeoutStopSec=300
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target
