@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 galaxy_info:
   role_name: harbor
   author: Shashi Yadav
@@ -12,5 +12,4 @@ galaxy_info:
         - focal
         - jammy
 
-dependencies:
-  - role: docker
+dependencies: []
