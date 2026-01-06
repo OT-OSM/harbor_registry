@@ -3,7 +3,7 @@
 # Harbor PASSIVE Failover Monitor (SAFE)
 # ----------------------------------------------
 
-ACTIVE_NODE_IP="{{ hostvars[groups['harbor_active'][0]].ansible_host }}"
+ACTIVE_NODE_IP="{{ harbor_active_host }}"
 SERVICE="harbor"
 CHECK_INTERVAL=10
 LOG_FILE="/var/log/harbor_passive_failover.log"
