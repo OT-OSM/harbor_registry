@@ -70,10 +70,10 @@ harbor_redis_external: false
 # ==================================================
 # Storage
 # ==================================================
-#harbor_storage_type: filesystem   # filesystem | s3 | gcs | azure
-#harbor_storage_ca: ""
+harbor_storage_type: filesystem   # filesystem | s3 | gcs | azure
+harbor_storage_ca: ""
 
-#harbor_registry_storage_path: /data/harbor/registry
+harbor_registry_storage_path: /data/harbor/registry
 # ===============================
 # External PostgreSQL
 # ===============================
@@ -97,10 +97,10 @@ harbor_redis_external: false
 # ===============================
 # Storage (example: S3 for active/passive)
 # ===============================
-harbor_storage_type: s3
-s3_region: us-east-1
-s3_bucket: test-harbor-s3-active
-harbor_s3_rootdirectory: /harbor
+#harbor_storage_type: s3
+#s3_region: us-east-1
+#s3_bucket: test-harbor-s3-active
+#harbor_s3_rootdirectory: /harbor
 
 # ==================================================
 # Registry
