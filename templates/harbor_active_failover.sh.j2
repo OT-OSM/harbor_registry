@@ -7,13 +7,14 @@ SERVICE="harbor"
 CHECK_INTERVAL=10
 LOG_FILE="/var/log/harbor_active_failover.log"
 
-{% if groups['harbor_passive'] is defined and groups['harbor_passive']|length > 0 %}
-PASSIVE_NODE_IP="{{ hostvars[groups['harbor_passive'][0]].ansible_host }}"
+{% if 'passive' in ansible_run_tags %}
+PASSIVE_NODE_IP="{{ harbor_passive_host }}"
 PASSIVE_ENABLED=true
 {% else %}
 PASSIVE_NODE_IP=""
 PASSIVE_ENABLED=false
 {% endif %}
+
 
 echo "$(date) - Harbor ACTIVE failover monitor started." | tee -a "$LOG_FILE"
 
