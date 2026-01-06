@@ -50,10 +50,10 @@ external_database:
     max_open_conns: {{ harbor_db_max_open_conns | default(0) }}
 {% else %}
 # Internal PostgreSQL (reference only – do not enable)
-# database:
-#   password: "{{ vault_harbor_db_internal_password }}"
-#   max_idle_conns: {{ harbor_db_max_idle_conns | default(100) }}
-#   max_open_conns: {{ harbor_db_max_open_conns | default(900) }}
+database:
+  password: "{{ vault_harbor_db_internal_password }}"
+  max_idle_conns: {{ harbor_db_max_idle_conns | default(100) }}
+  max_open_conns: {{ harbor_db_max_open_conns | default(900) }}
 {% endif %}
 
 # ==================================================
@@ -62,10 +62,10 @@ external_database:
 {% if harbor_redis_external | default(false) %}
 redis:
   external:
-    addr: {{ harbor_redis_host }}:{{ harbor_redis_port | default(6379) }}
-    {% if vault_harbor_redis_password is defined %}
+    addr: "{{ harbor_redis_host }}:{{ harbor_redis_port | default(6379) }}"
+{% if vault_harbor_redis_password is defined %}
     password: "{{ vault_harbor_redis_password }}"
-    {% endif %}
+{% endif %}
     db_index: {{ harbor_redis_db | default(0) }}
 {% else %}
 redis:
@@ -108,41 +108,36 @@ notification:
 # ==================================================
 # Registry
 # ==================================================
-registry:
-  max_concurrent_uploads: 10
-  relativeurls: {{ harbor_registry_relativeurls | default(false) }}
-  storage:
+storage_service:
 {% if harbor_storage_type == "filesystem" %}
-    filesystem:
-      rootdirectory: {{ harbor_registry_storage_path }}
+  filesystem:
+    rootdirectory: "{{ harbor_registry_storage_path }}"
 {% elif harbor_storage_type == "s3" %}
-    s3:
-      region: {{ s3_region }}
-      bucket: {{ s3_bucket }}
-      accesskey: {{ s3_access_key }}
-      secretkey: {{ s3_secret_key }}
-      endpoint: {{ s3_endpoint }}
-      secure: {{ s3_secure | default(true) }}
+  s3:
+    region: "{{ s3_region }}"
+    bucket: "{{ s3_bucket }}"
+    accesskey: "{{ vault_harbor_s3_access_key }}"
+    secretkey: "{{ vault_harbor_s3_secret_key }}"
+    secure: {{ s3_secure | default(true) | lower }}
 {% elif harbor_storage_type == "gcs" %}
-    gcs:
-      bucket: {{ gcs_bucket }}
-      encodedkey: "{{ gcs_encoded_key }}"
+  gcs:
+    bucket: "{{ gcs_bucket }}"
+    encodedkey: "{{ gcs_encoded_key }}"
 {% elif harbor_storage_type == "azure" %}
-    azure:
-      accountname: {{ azure_account_name }}
-      accountkey: "{{ azure_account_key }}"
-      container: {{ azure_container }}
+  azure:
+    accountname: "{{ azure_account_name }}"
+    accountkey: "{{ azure_account_key }}"
+    container: "{{ azure_container }}"
 {% endif %}
-    cache:
-      enabled: true
-      expire: {{ harbor_registry_cache_expire | default('168h') }}
+  redirect:
+    disable: false
 
 # ==================================================
 # Trivy
 # ==================================================
 trivy:
-  enabled: {{ harbor_trivy_enabled | default(true) }}
-  ignore_unfixed: {{ harbor_trivy_ignore_unfixed | default(false) }}
+  enabled: {{ harbor_trivy_enabled | default(true)  | lower}}
+  ignore_unfixed: {{ harbor_trivy_ignore_unfixed | default(false) | lower }}
   severity: "{{ harbor_trivy_severity | default('UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL') }}"
   timeout: {{ harbor_trivy_timeout | default('5m') }}
 
@@ -150,7 +145,7 @@ trivy:
 # Metrics
 # ==================================================
 metric:
-  enabled: {{ harbor_metrics_enabled | default(false) }}
+  enabled: {{ harbor_metrics_enabled | default(false)  | lower }}
   port: {{ harbor_metrics_port | default(9090) }}
   path: /metrics
 
@@ -164,7 +159,7 @@ audit:
 # Upload Purging
 # ==================================================
 upload_purging:
-  enabled: {{ harbor_upload_purge_enabled | default(true) }}
+  enabled: {{ harbor_upload_purge_enabled | default(true) | lower }}
   age: {{ harbor_upload_purge_age | default('168h') }}
   interval: {{ harbor_upload_purge_interval | default('24h') }}
   dryrun: {{ harbor_upload_purge_dryrun | default(false) }}
@@ -173,7 +168,7 @@ upload_purging:
 # Proxy
 # ==================================================
 proxy:
-  http_proxy: "{{ harbor_http_proxy | default('') }}"
+  http_proxy: "{{ harbor_http_proxy | default('')  | lower}}"
   https_proxy: "{{ harbor_https_proxy | default('') }}"
   no_proxy: "{{ harbor_no_proxy | default('127.0.0.1,localhost,.local') }}"
 
@@ -181,7 +176,7 @@ proxy:
 # Internal TLS (OPTIONAL ≥ 2.9)
 # ==================================================
 internal_tls:
-  enabled: {{ harbor_internal_tls_enabled | default(false) }}
+  enabled: {{ harbor_internal_tls_enabled | default(false) | lower }}
 {% if harbor_internal_tls_enabled | default(false) %}
   dir: {{ harbor_internal_tls_dir | default('/etc/harbor/tls/internal') }}
 {% endif %}
