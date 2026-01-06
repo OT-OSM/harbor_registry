@@ -1,7 +1,14 @@
-#SPDX-License-Identifier: MIT-0
+# roles/harbor/tasks/main.yml
 ---
+- name: Set Harbor role mode from inventory
+  set_fact:
+    harbor_role_mode: >-
+      {{ 'active' if inventory_hostname in groups['harbor_active']
+         else 'passive' }}
+
+- import_tasks: prereqs.yml
 - import_tasks: install.yml
 - import_tasks: configure.yml
-- import_tasks: prereqs.yml
 - import_tasks: service.yml
-
+- import_tasks: systemd.yml
+- import_tasks: failover.yml

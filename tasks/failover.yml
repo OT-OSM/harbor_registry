@@ -1,0 +1,56 @@
+# -------------------------
+# ACTIVE node failover
+# -------------------------
+- name: Install ACTIVE failover script
+  template:
+    src: harbor_active_failover.sh.j2
+    dest: /usr/local/bin/harbor_failover.sh
+    mode: "0755"
+  when: harbor_role_mode == "active"
+
+- name: Install ACTIVE failover service
+  template:
+    src: harbor-failover.service.j2
+    dest: /etc/systemd/system/harbor-active-failover.service
+    mode: "0644"
+  vars:
+    harbor_failover_role: active
+    harbor_failover_script: /usr/local/bin/harbor_failover.sh
+  when: harbor_role_mode == "active"
+
+- name: Enable ACTIVE failover service
+  systemd:
+    name: harbor-active-failover
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: harbor_role_mode == "active"
+
+
+# -------------------------
+# PASSIVE node failover
+# -------------------------
+- name: Install PASSIVE failover script
+  template:
+    src: harbor_passive_failover.sh.j2
+    dest: /usr/local/bin/harbor_failover.sh
+    mode: "0755"
+  when: harbor_role_mode == "passive"
+
+- name: Install PASSIVE failover service
+  template:
+    src: harbor-failover.service.j2
+    dest: /etc/systemd/system/harbor-passive-failover.service
+    mode: "0644"
+  vars:
+    harbor_failover_role: passive
+    harbor_failover_script: /usr/local/bin/harbor_failover.sh
+  when: harbor_role_mode == "passive"
+
+- name: Enable PASSIVE failover service
+  systemd:
+    name: harbor-passive-failover
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: harbor_role_mode == "passive"

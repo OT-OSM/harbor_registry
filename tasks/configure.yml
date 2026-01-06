@@ -12,7 +12,7 @@
   template:
     src: harbor.yml.j2
     dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
-  no_log: true
+#  no_log: true
 
 - name: Ensure Harbor data directory
   file:
