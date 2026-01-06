@@ -1,9 +1,22 @@
-- name: Install Harbor systemd service
-  template:
-    src: harbor.service.j2
-    dest: /etc/systemd/system/harbor.service
-    mode: "0644"
-  notify:
-    - reload systemd
-    - restart harbor
+---
+# ==============================
+# Harbor Prepare (Both Nodes)
+# ==============================
 
+- name: Ensure Harbor prepare script exists
+  stat:
+    path: "{{ harbor_install_dir }}/harbor/prepare"
+  register: harbor_prepare
+
+- name: Fail if Harbor prepare script is missing
+  fail:
+    msg: "Harbor prepare script not found. Installation may have failed."
+  when: not harbor_prepare.stat.exists
+
+- name: Run Harbor prepare
+  command: ./prepare
+  args:
+    chdir: "{{ harbor_install_dir }}/harbor"
+  when:
+    - not (harbor_skip_prepare | default(false))
+    - not harbor_test_mode | default(false)
