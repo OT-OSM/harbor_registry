@@ -1,13 +1,31 @@
-Ansible Role: harbor_registry v
-=========
+# Harbor Registry Role – Tag-Specific Execution (Active / Passive)
 
 [![Opstree Solutions][opstree_avatar]][opstree_homepage]<br/>[Opstree Solutions][opstree_homepage]
 
 [opstree_homepage]: https://opstree.github.io/
 [opstree_avatar]: https://img.cloudposse.com/150x150/https://github.com/opstree.png
 
-An Ansible role to **install and configure Harbor Container Registry** using the official
-Harbor installer.
+The `harbor_registry` role supports tag-based execution to control **active** and **passive** Harbor node behavior. 
+This is especially useful when integrating with CI/CD tools such as Semaphore. 
+
+## Supported Tags
+
+| Tag     | Purpose                                      |
+|--------|----------------------------------------------|
+| active | Executes tasks meant for the active Harbor node  |
+| passive| Executes tasks meant for the passive Harbor node |
+
+## Tag Behavior
+
+Ansible evaluates multiple tags using OR logic.
+This means that when you pass several tags, any task containing at least one of those tags will be executed. 
+
+Running the following command executes all tasks tagged `active` **or** `passive`:
+
+```bash
+ansible-playbook -i inventory/harbor harbor.yml --tags "active,passive"
+```
+
 
 ---
 
@@ -377,7 +395,12 @@ using the `harbor_registry` role.
   roles:
     - harbor_registry
 ```
+### `Run playbook with both tags together`
+This will execute all tasks tagged active OR passive.
 
+```yaml
+ansible-playbook -i inventory/harbor playbook.yml --tags "active,passive"
+```
 ## References
 
 ### Source Code
