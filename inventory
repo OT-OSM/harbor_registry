@@ -1,0 +1,14 @@
+# ===============================
+# Harbor Active / Passive Nodes
+# ===============================
+
+[harbor_active]
+harbor-active ansible_host=192.168.8.75
+
+#[harbor_passive]
+#harbor-passive ansible_host=172.31.45.60 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/poc.pem
+
+# Parent group (used in playbook)
+[harbor:children]
+harbor_active
+#harbor_passive
