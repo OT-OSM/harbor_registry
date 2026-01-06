@@ -15,7 +15,6 @@
     state: directory
     mode: '0755'
 
-
 - name: Set Harbor installer URL and filename
   set_fact:
     harbor_installer_url: >-
@@ -30,7 +29,6 @@
     url: "{{ harbor_installer_url }}"
     dest: "{{ harbor_install_dir }}/{{ harbor_installer_tar }}"
     mode: '0644'
-
 
 - name: Extract Harbor installer
   unarchive:
