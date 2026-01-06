@@ -34,15 +34,3 @@
   failed_when: docker_compose.rc != 0
   when: not harbor_test_mode | default(false)
 
-# ==============================
-# Harbor Prepare
-# ==============================
-
-- name: Run Harbor prepare
-  command: ./prepare
-  args:
-    chdir: "{{ harbor_install_dir }}/harbor"
-  when:
-    - not harbor_skip_prepare
-    - not harbor_test_mode | default(false)
-
