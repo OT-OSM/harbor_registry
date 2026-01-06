@@ -1,0 +1,150 @@
+
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for harbor
+
+# ==================================================
+# Harbor Installer
+# ==================================================
+
+# Harbor version WITHOUT 'v'
+harbor_version: "2.14.0"
+
+# online | offline
+harbor_installer_type: "offline"
+
+harbor_installer_name: "harbor-installer-v{{ harbor_version }}.tgz"
+harbor_offline_installer_name: "harbor-offline-installer-v{{ harbor_version }}.tgz"
+
+harbor_offline_installer_url: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/harbor-offline-installer-v{{ harbor_version }}.tgz"
+
+harbor_online_installer_url: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/harbor-installer-v{{ harbor_version }}.tgz"
+
+
+# ==================================================
+# Core Configuration
+# ==================================================
+
+harbor_hostname: "harbor.local"
+harbor_external_url: ""
+
+harbor_data_dir: /data/harbor
+harbor_install_dir: /opt
+
+harbor_http_port: 80
+#harbor_https_enabled: false
+#harbor_https_port: 443
+
+#harbor_ssl_cert_path: ""
+#harbor_ssl_key_path: ""
+
+
+
+# ==================================================
+# Logging (MANDATORY ≥ 2.9)
+# ==================================================
+
+harbor_log_level: info
+harbor_log_sweeper_duration: "1"
+
+harbor_log_rotate_count: 50
+harbor_log_rotate_size: 200M
+harbor_log_dir: /var/log/harbor
+
+# ==================================================
+# Database Configuration
+# ==================================================
+
+# Set to true to use an EXTERNAL PostgreSQL database
+harbor_db_external: false
+
+
+# ==================================================
+# Redis Configuration
+# ==================================================
+
+# Set to true to use an EXTERNAL Redis instance
+harbor_redis_external: false
+
+
+# ==================================================
+# Storage
+# ==================================================
+#harbor_storage_type: filesystem   # filesystem | s3 | gcs | azure
+#harbor_storage_ca: ""
+
+#harbor_registry_storage_path: /data/harbor/registry
+# ===============================
+# External PostgreSQL
+# ===============================
+#harbor_db_external: true
+#harbor_db_host: 172.31.38.252
+#harbor_db_port: 5432
+#harbor_db_name: harbor
+#harbor_db_user: harboruser
+#harbor_db_sslmode: disable
+#harbor_db_max_idle_conns: 100
+#harbor_db_max_open_conns: 900
+
+# ===============================
+# External Redis
+# ===============================
+#harbor_redis_external: true
+#harbor_redis_host: 172.31.38.252
+#harbor_redis_port: 6379
+#harbor_redis_db: 0
+
+# ===============================
+# Storage (example: S3 for active/passive)
+# ===============================
+harbor_storage_type: s3
+s3_region: us-east-1
+s3_bucket: test-harbor-s3-active
+harbor_s3_rootdirectory: /harbor
+
+# ==================================================
+# Registry
+# ==================================================
+harbor_registry_relativeurls: false
+
+# ==================================================
+# Trivy
+# ==================================================
+harbor_trivy_enabled: true
+harbor_trivy_ignore_unfixed: false
+harbor_trivy_severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
+harbor_trivy_timeout: 5m
+
+# ==================================================
+# Jobservice
+# ==================================================
+harbor_job_workers: 10
+
+# ==================================================
+# Notification
+# ==================================================
+harbor_webhook_retry: 10
+harbor_webhook_timeout: 3
+
+# ==================================================
+# Upload Purging
+# ==================================================
+harbor_upload_purge_enabled: true
+harbor_upload_purge_age: 168h
+harbor_upload_purge_interval: 24h
+harbor_upload_purge_dryrun: false
+
+# ==================================================
+# Metrics
+# ==================================================
+harbor_metrics_enabled: true
+harbor_metrics_port: 9090
+
+
+# ==================================================
+# Proxy
+# ==================================================
+harbor_proxy_enabled: false
+harbor_http_proxy: ""
+harbor_https_proxy: ""
+harbor_no_proxy: "127.0.0.1,localhost,.local"

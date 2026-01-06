@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for harbor
+
+# Internal constants – DO NOT OVERRIDE
+harbor_systemd_service_name: harbor
+harbor_compose_bin: docker compose
+
+
