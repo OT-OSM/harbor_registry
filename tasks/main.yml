@@ -1,10 +1,10 @@
 # roles/harbor/tasks/main.yml
 ---
-- name: Set Harbor role mode from inventory
+- name: Set Harbor role mode from tags
   set_fact:
     harbor_role_mode: >-
-      {{ 'active' if inventory_hostname in groups['harbor_active']
-         else 'passive' }}
+      {{ 'active' if 'active' in ansible_run_tags else 'passive' }}
+
 
 - import_tasks: prereqs.yml
 - import_tasks: install.yml
