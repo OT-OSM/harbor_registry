@@ -1,0 +1,185 @@
+# ==================================================
+# Core
+# ==================================================
+{% if harbor_external_url is defined and harbor_external_url | length > 0 %}
+external_url: {{ harbor_external_url }}
+hostname: {{ harbor_hostname }}
+{% else %}
+hostname: {{ harbor_hostname }}
+{% endif %}
+
+# REQUIRED: Harbor base data directory
+data_volume: {{ harbor_data_dir }}
+
+http:
+  port: {{ harbor_http_port | default(80) }}
+
+{% if harbor_https_enabled | default(false) %}
+https:
+  port: {{ harbor_https_port | default(443) }}
+  certificate: {{ harbor_ssl_cert_path }}
+  private_key: {{ harbor_ssl_key_path }}
+{% endif %}
+
+harbor_admin_password: "{{ vault_harbor_admin_password }}"
+
+# ==================================================
+# Log Configuration (MANDATORY ≥ 2.9)
+# ==================================================
+log:
+  level: {{ harbor_log_level | default('info') }}
+  logger_sweeper_duration: {{ harbor_log_sweeper_duration | default('1') }}
+  local:
+    rotate_count: {{ harbor_log_rotate_count | default(50) }}
+    rotate_size: {{ harbor_log_rotate_size | default('200M') }}
+    location: {{ harbor_log_dir | default('/var/log/harbor') }}
+
+# ==================================================
+# Database Configuration
+# ==================================================
+{% if harbor_db_external | default(false) %}
+external_database:
+  harbor:
+    host: {{ harbor_db_host }}
+    port: {{ harbor_db_port | default(5432) }}
+    db_name: {{ harbor_db_name | default('harbor_db') }}
+    username: {{ harbor_db_user }}
+    password: "{{ vault_harbor_db_password }}"
+    ssl_mode: {{ harbor_db_sslmode | default('disable') }}
+    max_idle_conns: {{ harbor_db_max_idle_conns | default(2) }}
+    max_open_conns: {{ harbor_db_max_open_conns | default(0) }}
+{% else %}
+# Internal PostgreSQL (reference only – do not enable)
+database:
+  password: "{{ vault_harbor_db_internal_password }}"
+  max_idle_conns: {{ harbor_db_max_idle_conns | default(100) }}
+  max_open_conns: {{ harbor_db_max_open_conns | default(900) }}
+{% endif %}
+
+# ==================================================
+# Redis Configuration
+# ==================================================
+{% if harbor_redis_external | default(false) %}
+redis:
+  external:
+    addr: "{{ harbor_redis_host }}:{{ harbor_redis_port | default(6379) }}"
+{% if vault_harbor_redis_password is defined %}
+    password: "{{ vault_harbor_redis_password }}"
+{% endif %}
+    db_index: {{ harbor_redis_db | default(0) }}
+{% else %}
+redis:
+  # Internal Redis → MUST NOT use AUTH
+  password: ""
+{% endif %}
+
+# ==================================================
+# Jobservice (MANDATORY ≥ 2.8)
+# ==================================================
+jobservice:
+  # Maximum number of job workers in job service
+  max_job_workers: {{ harbor_job_workers | default(10) }}
+
+  # Maximum hours of task duration in job service, default 24
+  max_job_duration_hours: {{ harbor_job_max_duration_hours | default(24) }}
+
+  # The jobLoggers backend name, only support "STD_OUTPUT", "FILE" and/or "DB"
+  job_loggers:
+{% if harbor_job_loggers is defined %}
+{% for logger in harbor_job_loggers %}
+    - {{ logger }}
+{% endfor %}
+{% else %}
+    - STD_OUTPUT
+    - FILE
+{% endif %}
+  # - DB
+
+  # The jobLogger sweeper duration (ignored if `jobLogger` is `stdout`)
+  logger_sweeper_duration: {{ harbor_job_logger_sweeper_duration | default('1') }}
+
+# ==================================================
+# Notification (MANDATORY ≥ 2.9)
+# ==================================================
+notification:
+  webhook_job_max_retry: {{ harbor_webhook_retry | default(10) }}
+  webhook_job_http_client_timeout: {{ harbor_webhook_timeout | default(3) }}
+
+# ==================================================
+# Registry
+# ==================================================
+storage_service:
+{% if harbor_storage_type == "filesystem" %}
+  filesystem:
+    rootdirectory: "{{ harbor_registry_storage_path }}"
+{% elif harbor_storage_type == "s3" %}
+  s3:
+    region: "{{ s3_region }}"
+    bucket: "{{ s3_bucket }}"
+    accesskey: "{{ vault_harbor_s3_access_key }}"
+    secretkey: "{{ vault_harbor_s3_secret_key }}"
+    secure: {{ s3_secure | default(true) | lower }}
+{% elif harbor_storage_type == "gcs" %}
+  gcs:
+    bucket: "{{ gcs_bucket }}"
+    encodedkey: "{{ gcs_encoded_key }}"
+{% elif harbor_storage_type == "azure" %}
+  azure:
+    accountname: "{{ azure_account_name }}"
+    accountkey: "{{ azure_account_key }}"
+    container: "{{ azure_container }}"
+{% endif %}
+  redirect:
+    disable: false
+
+# ==================================================
+# Trivy
+# ==================================================
+trivy:
+  enabled: {{ harbor_trivy_enabled | default(true)  | lower}}
+  ignore_unfixed: {{ harbor_trivy_ignore_unfixed | default(false) | lower }}
+  severity: "{{ harbor_trivy_severity | default('UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL') }}"
+  timeout: {{ harbor_trivy_timeout | default('5m') }}
+
+# ==================================================
+# Metrics
+# ==================================================
+metric:
+  enabled: {{ harbor_metrics_enabled | default(false)  | lower }}
+  port: {{ harbor_metrics_port | default(9090) }}
+  path: /metrics
+
+# ==================================================
+# Audit
+# ==================================================
+audit:
+  enabled: true
+
+# ==================================================
+# Upload Purging
+# ==================================================
+upload_purging:
+  enabled: {{ harbor_upload_purge_enabled | default(true) | lower }}
+  age: {{ harbor_upload_purge_age | default('168h') }}
+  interval: {{ harbor_upload_purge_interval | default('24h') }}
+  dryrun: {{ harbor_upload_purge_dryrun | default(false) }}
+
+# ==================================================
+# Proxy
+# ==================================================
+proxy:
+  http_proxy: "{{ harbor_http_proxy | default('')  | lower}}"
+  https_proxy: "{{ harbor_https_proxy | default('') }}"
+  no_proxy: "{{ harbor_no_proxy | default('127.0.0.1,localhost,.local') }}"
+
+# ==================================================
+# Internal TLS (OPTIONAL ≥ 2.9)
+# ==================================================
+internal_tls:
+  enabled: {{ harbor_internal_tls_enabled | default(false) | lower }}
+{% if harbor_internal_tls_enabled | default(false) %}
+  dir: {{ harbor_internal_tls_dir | default('/etc/harbor/tls/internal') }}
+{% endif %}
+
+# DO NOT REMOVE – Harbor version marker
+_version: {{ harbor_version | default('2.14.0') }}

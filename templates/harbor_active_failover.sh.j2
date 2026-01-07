@@ -1,0 +1,58 @@
+#!/bin/bash
+# ----------------------------------------------
+# Harbor ACTIVE Self-Recovery Monitor (SAFE)
+# ----------------------------------------------
+
+SERVICE="harbor"
+CHECK_INTERVAL=10
+LOG_FILE="/var/log/harbor_active_failover.log"
+
+{% if 'passive' in ansible_run_tags %}
+PASSIVE_NODE_IP="{{ harbor_active_host }}"
+PASSIVE_ENABLED=true
+{% else %}
+PASSIVE_NODE_IP=""
+PASSIVE_ENABLED=false
+{% endif %}
+
+
+echo "$(date) - Harbor ACTIVE failover monitor started." | tee -a "$LOG_FILE"
+
+if [ "$PASSIVE_ENABLED" = true ]; then
+  echo "$(date) - Passive node detected as $PASSIVE_NODE_IP" | tee -a "$LOG_FILE"
+else
+  echo "$(date) - Passive node NOT configured (active-only mode)" | tee -a "$LOG_FILE"
+fi
+
+while true; do
+    TS=$(date)
+
+    # -----------------------------------
+    # Local Harbor health check
+    # -----------------------------------
+    if systemctl is-active --quiet "$SERVICE"; then
+        echo "$TS - Harbor running normally on ACTIVE." | tee -a "$LOG_FILE"
+    else
+        echo "$TS - Harbor DOWN on ACTIVE. Restarting..." | tee -a "$LOG_FILE"
+        systemctl start "$SERVICE"
+
+        if systemctl is-active --quiet "$SERVICE"; then
+            echo "$TS - Harbor restart SUCCESSFUL on ACTIVE." | tee -a "$LOG_FILE"
+        else
+            echo "$TS - Harbor restart FAILED on ACTIVE." | tee -a "$LOG_FILE"
+        fi
+    fi
+
+    # -----------------------------------
+    # Passive visibility (informational only)
+    # -----------------------------------
+    if [ "$PASSIVE_ENABLED" = true ]; then
+        if curl -sk --connect-timeout 2 https://$PASSIVE_NODE_IP >/dev/null; then
+            echo "$TS - Passive Harbor reachable (informational)." | tee -a "$LOG_FILE"
+        else
+            echo "$TS - Passive Harbor NOT reachable (informational)." | tee -a "$LOG_FILE"
+        fi
+    fi
+
+    sleep "$CHECK_INTERVAL"
+done

@@ -1,0 +1,21 @@
+# handlers/main.yml
+# ===============================
+
+# Always safe on both nodes
+- name: reload systemd
+  systemd:
+    daemon_reload: true
+
+- name: restart harbor
+  systemd:
+    name: harbor
+    state: restarted
+  when: harbor_role_mode == "active"
+
+- name: start harbor
+  systemd:
+    name: harbor
+    state: started
+    enabled: true
+  when: harbor_role_mode == "active"
+

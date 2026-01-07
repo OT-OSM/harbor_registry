@@ -1,0 +1,17 @@
+[Unit]
+Description=Harbor {{ harbor_failover_role | capitalize }} Node Failover Monitor
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={{ harbor_failover_script }}
+Restart=always
+RestartSec=5
+User=root
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=harbor-{{ harbor_failover_role }}-failover
+
+[Install]
+WantedBy=multi-user.target

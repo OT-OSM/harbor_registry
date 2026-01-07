@@ -1,0 +1,17 @@
+---
+- name: Set Harbor role mode from tags
+  set_fact:
+    harbor_role_mode: >-
+      {{ 'active' if 'active' in ansible_run_tags else 'passive' }}
+
+- name: Capture active node ansible_host
+  set_fact:
+    harbor_active_host: "{{ ansible_host | default(inventory_hostname) }}"
+  when: "'active' in ansible_run_tags"
+
+- import_tasks: prereqs.yml
+- import_tasks: install.yml
+- import_tasks: configure.yml
+- import_tasks: service.yml
+- import_tasks: systemd.yml
+- import_tasks: failover.yml

@@ -1,0 +1,46 @@
+#!/bin/bash
+# ----------------------------------------------
+# Harbor PASSIVE Failover Monitor (SAFE)
+# ----------------------------------------------
+
+ACTIVE_NODE_IP="{{ harbor_active_host }}"
+SERVICE="harbor"
+CHECK_INTERVAL=10
+LOG_FILE="/var/log/harbor_passive_failover.log"
+
+echo "$(date) - Harbor PASSIVE failover monitor started." | tee -a "$LOG_FILE"
+echo "$(date) - Active node detected as $ACTIVE_NODE_IP" | tee -a "$LOG_FILE"
+
+while true; do
+    TS=$(date)
+
+    # Check if ACTIVE Harbor endpoint is reachable
+    if curl -sk --connect-timeout 2 https://$ACTIVE_NODE_IP >/dev/null; then
+        ACTIVE_UP=true
+    else
+        ACTIVE_UP=false
+    fi
+
+    # Check local Harbor status
+    if systemctl is-active --quiet "$SERVICE"; then
+        PASSIVE_UP=true
+    else
+        PASSIVE_UP=false
+    fi
+
+    # -----------------------------------
+    # FAILOVER (promotion only)
+    # -----------------------------------
+    if [ "$ACTIVE_UP" = false ] && [ "$PASSIVE_UP" = false ]; then
+        echo "$TS - Active Harbor unreachable. Promoting PASSIVE to ACTIVE." | tee -a "$LOG_FILE"
+        systemctl start "$SERVICE"
+
+        if systemctl is-active --quiet "$SERVICE"; then
+            echo "$TS - Harbor promotion SUCCESSFUL on PASSIVE." | tee -a "$LOG_FILE"
+        else
+            echo "$TS - Harbor promotion FAILED on PASSIVE." | tee -a "$LOG_FILE"
+        fi
+    fi
+
+    sleep "$CHECK_INTERVAL"
+done
