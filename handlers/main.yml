@@ -10,12 +10,12 @@
   systemd:
     name: harbor
     state: restarted
-  when: harbor_role_mode == "active"
+  when: harbor_role_mode in ["active", "passive"]
 
 - name: start harbor
   systemd:
     name: harbor
     state: started
     enabled: true
-  when: harbor_role_mode == "active"
+  when: harbor_role_mode in ["active", "passive"]
 

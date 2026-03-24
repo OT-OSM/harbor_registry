@@ -4,19 +4,19 @@
 # ==============================
 
 - name: Ensure Harbor prepare script exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ harbor_install_dir }}/harbor/prepare"
   register: harbor_prepare
 
 - name: Fail if Harbor prepare script is missing
-  fail:
+  ansible.builtin.fail:
     msg: "Harbor prepare script not found. Installation may have failed."
   when: not harbor_prepare.stat.exists
 
 - name: Run Harbor prepare
-  command: ./prepare
-  args:
+  ansible.builtin.command:
+    cmd: ./prepare
     chdir: "{{ harbor_install_dir }}/harbor"
   when:
     - not (harbor_skip_prepare | default(false))
-    - not harbor_test_mode | default(false)
+    - harbor_mode | default('prod') != 'test'

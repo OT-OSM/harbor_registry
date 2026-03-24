@@ -1,31 +1,39 @@
 - name: Validate DB external flag
-  assert:
+  ansible.builtin.assert:
     that:
       - harbor_db_external is boolean
 
 - name: Validate Redis external flag
-  assert:
+  ansible.builtin.assert:
     that:
       - harbor_redis_external is boolean
 
+- name: Validate S3 configuration (MinIO)
+  ansible.builtin.assert:
+    that:
+      - s3_endpoint is defined
+      - s3_endpoint | length > 0
+      - s3_bucket is defined
+      - s3_bucket | length > 0
+  when: harbor_storage_type == "s3"
+
 - name: Render harbor.yml
-  template:
+  ansible.builtin.template:
     src: harbor.yml.j2
     dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
-#  no_log: true
+    mode: "0644"
 
 - name: Ensure Harbor data directory
-  file:
+  ansible.builtin.file:
     path: "{{ harbor_data_dir }}"
     state: directory
-    owner: 10000
-    group: 10000
-
+    owner: "10000"
+    group: "10000"
+    mode: "0755"
 
 - name: Validate Harbor hostname or external_url
-  fail:
+  ansible.builtin.fail:
     msg: "Either harbor_hostname or harbor_external_url must be set"
   when:
     - harbor_hostname | default('') | length == 0
     - harbor_external_url | default('') | length == 0
-

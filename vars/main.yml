@@ -3,7 +3,11 @@
 # vars file for harbor
 
 # Internal constants – DO NOT OVERRIDE
+
 harbor_systemd_service_name: harbor
-harbor_compose_bin: docker compose
 
+# Docker binary path (can be overridden if needed)
+harbor_docker_bin: /usr/bin/docker
 
+# Docker compose command
+harbor_compose_bin: "{{ harbor_docker_bin }} compose"

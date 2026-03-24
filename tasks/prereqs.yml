@@ -4,34 +4,32 @@
 # ==============================
 
 - name: Check if Docker binary exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/bin/docker
   register: docker_binary
-  when: not harbor_test_mode | default(false)
+  when: harbor_mode | default('prod') != 'test'
 
 - name: Fail if Docker is not installed
-  fail:
+  ansible.builtin.fail:
     msg: >
       Docker is not installed on this host.
       Harbor requires Docker Engine to be installed and running
       before executing this role.
   when:
-    - not harbor_test_mode | default(false)
+    - harbor_mode | default('prod') != 'test'
     - not docker_binary.stat.exists
 
 - name: Check if Docker daemon is running
-  command: docker info
+  ansible.builtin.command: docker info
   register: docker_info
   changed_when: false
   failed_when: docker_info.rc != 0
   become: true
-  when: not harbor_test_mode | default(false)
+  when: harbor_mode | default('prod') != 'test'
 
 - name: Check if Docker Compose v2 is available
-  command: docker compose version
+  ansible.builtin.command: docker compose version
   register: docker_compose
   changed_when: false
   failed_when: docker_compose.rc != 0
-  when: not harbor_test_mode | default(false)
-
-
+  when: harbor_mode | default('prod') != 'test'

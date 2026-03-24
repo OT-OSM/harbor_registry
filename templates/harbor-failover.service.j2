@@ -9,8 +9,8 @@ ExecStart={{ harbor_failover_script }}
 Restart=always
 RestartSec=5
 User=root
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=harbor-{{ harbor_failover_role }}-failover
 
 [Install]

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------------------
-# Harbor PASSIVE Failover Monitor (SAFE)
+# Harbor PASSIVE Failover Monitor (PROD SAFE)
 # ----------------------------------------------
 
 ACTIVE_NODE_IP="{{ harbor_active_host }}"
@@ -14,14 +14,18 @@ echo "$(date) - Active node detected as $ACTIVE_NODE_IP" | tee -a "$LOG_FILE"
 while true; do
     TS=$(date)
 
-    # Check if ACTIVE Harbor endpoint is reachable
-    if curl -sk --connect-timeout 2 https://$ACTIVE_NODE_IP >/dev/null; then
+    # -----------------------------------
+    # Check if ACTIVE Harbor is reachable
+    # -----------------------------------
+    if curl -s --connect-timeout 2 http://$ACTIVE_NODE_IP/api/v2.0/ping >/dev/null; then
         ACTIVE_UP=true
     else
         ACTIVE_UP=false
     fi
 
+    # -----------------------------------
     # Check local Harbor status
+    # -----------------------------------
     if systemctl is-active --quiet "$SERVICE"; then
         PASSIVE_UP=true
     else
@@ -33,13 +37,23 @@ while true; do
     # -----------------------------------
     if [ "$ACTIVE_UP" = false ] && [ "$PASSIVE_UP" = false ]; then
         echo "$TS - Active Harbor unreachable. Promoting PASSIVE to ACTIVE." | tee -a "$LOG_FILE"
+
         systemctl start "$SERVICE"
+        sleep 5
 
         if systemctl is-active --quiet "$SERVICE"; then
             echo "$TS - Harbor promotion SUCCESSFUL on PASSIVE." | tee -a "$LOG_FILE"
         else
             echo "$TS - Harbor promotion FAILED on PASSIVE." | tee -a "$LOG_FILE"
         fi
+    fi
+
+    # -----------------------------------
+    # Safety: Avoid duplicate ACTIVE nodes
+    # -----------------------------------
+    if [ "$ACTIVE_UP" = true ] && [ "$PASSIVE_UP" = true ]; then
+        echo "$TS - WARNING: Both nodes ACTIVE! Stopping local Harbor." | tee -a "$LOG_FILE"
+        systemctl stop "$SERVICE"
     fi
 
     sleep "$CHECK_INTERVAL"

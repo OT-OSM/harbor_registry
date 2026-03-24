@@ -148,3 +148,10 @@ harbor_proxy_enabled: false
 harbor_http_proxy: ""
 harbor_https_proxy: ""
 harbor_no_proxy: "127.0.0.1,localhost,.local"
+
+# S3 (MinIO compatible)
+s3_endpoint: ""
+s3_region: "us-east-1"
+s3_bucket: ""
+s3_secure: false
+harbor_s3_rootdirectory: "/harbor"

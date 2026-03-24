@@ -1,6 +1,6 @@
 ---
 - name: Install Harbor systemd service
-  template:
+  ansible.builtin.template:
     src: harbor.service.j2
     dest: /etc/systemd/system/harbor.service
     mode: "0644"
@@ -8,17 +8,17 @@
     - reload systemd
 
 - name: Enable and start Harbor (ACTIVE)
-  systemd:
+  ansible.builtin.systemd:
     name: harbor
     state: started
     enabled: true
     daemon_reload: true
   when: harbor_role_mode == "active"
 
-- name: Stop and disable Harbor (PASSIVE)
-  systemd:
+- name: Ensure Harbor is stopped (PASSIVE)
+  ansible.builtin.systemd:
     name: harbor
     state: stopped
-    enabled: false
+    enabled: true
     daemon_reload: true
   when: harbor_role_mode == "passive"

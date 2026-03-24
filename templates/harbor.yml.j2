@@ -49,7 +49,6 @@ external_database:
     max_idle_conns: {{ harbor_db_max_idle_conns | default(2) }}
     max_open_conns: {{ harbor_db_max_open_conns | default(0) }}
 {% else %}
-# Internal PostgreSQL (reference only – do not enable)
 database:
   password: "{{ vault_harbor_db_internal_password }}"
   max_idle_conns: {{ harbor_db_max_idle_conns | default(100) }}
@@ -69,21 +68,15 @@ redis:
     db_index: {{ harbor_redis_db | default(0) }}
 {% else %}
 redis:
-  # Internal Redis → MUST NOT use AUTH
   password: ""
 {% endif %}
 
 # ==================================================
-# Jobservice (MANDATORY ≥ 2.8)
+# Jobservice
 # ==================================================
 jobservice:
-  # Maximum number of job workers in job service
   max_job_workers: {{ harbor_job_workers | default(10) }}
-
-  # Maximum hours of task duration in job service, default 24
   max_job_duration_hours: {{ harbor_job_max_duration_hours | default(24) }}
-
-  # The jobLoggers backend name, only support "STD_OUTPUT", "FILE" and/or "DB"
   job_loggers:
 {% if harbor_job_loggers is defined %}
 {% for logger in harbor_job_loggers %}
@@ -93,20 +86,17 @@ jobservice:
     - STD_OUTPUT
     - FILE
 {% endif %}
-  # - DB
-
-  # The jobLogger sweeper duration (ignored if `jobLogger` is `stdout`)
   logger_sweeper_duration: {{ harbor_job_logger_sweeper_duration | default('1') }}
 
 # ==================================================
-# Notification (MANDATORY ≥ 2.9)
+# Notification
 # ==================================================
 notification:
   webhook_job_max_retry: {{ harbor_webhook_retry | default(10) }}
   webhook_job_http_client_timeout: {{ harbor_webhook_timeout | default(3) }}
 
 # ==================================================
-# Registry
+# Registry (STORAGE)
 # ==================================================
 storage_service:
 {% if harbor_storage_type == "filesystem" %}
@@ -116,9 +106,11 @@ storage_service:
   s3:
     region: "{{ s3_region }}"
     bucket: "{{ s3_bucket }}"
+    endpoint: "{{ s3_endpoint }}"
     accesskey: "{{ vault_harbor_s3_access_key }}"
     secretkey: "{{ vault_harbor_s3_secret_key }}"
-    secure: {{ s3_secure | default(true) | lower }}
+    secure: {{ s3_secure | default(false) | lower }}
+    rootdirectory: "{{ harbor_s3_rootdirectory | default('/harbor') }}"
 {% elif harbor_storage_type == "gcs" %}
   gcs:
     bucket: "{{ gcs_bucket }}"
@@ -136,7 +128,7 @@ storage_service:
 # Trivy
 # ==================================================
 trivy:
-  enabled: {{ harbor_trivy_enabled | default(true)  | lower}}
+  enabled: {{ harbor_trivy_enabled | default(true) | lower }}
   ignore_unfixed: {{ harbor_trivy_ignore_unfixed | default(false) | lower }}
   severity: "{{ harbor_trivy_severity | default('UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL') }}"
   timeout: {{ harbor_trivy_timeout | default('5m') }}
@@ -145,7 +137,7 @@ trivy:
 # Metrics
 # ==================================================
 metric:
-  enabled: {{ harbor_metrics_enabled | default(false)  | lower }}
+  enabled: {{ harbor_metrics_enabled | default(false) | lower }}
   port: {{ harbor_metrics_port | default(9090) }}
   path: /metrics
 
@@ -168,12 +160,12 @@ upload_purging:
 # Proxy
 # ==================================================
 proxy:
-  http_proxy: "{{ harbor_http_proxy | default('')  | lower}}"
+  http_proxy: "{{ harbor_http_proxy | default('') }}"
   https_proxy: "{{ harbor_https_proxy | default('') }}"
   no_proxy: "{{ harbor_no_proxy | default('127.0.0.1,localhost,.local') }}"
 
 # ==================================================
-# Internal TLS (OPTIONAL ≥ 2.9)
+# Internal TLS
 # ==================================================
 internal_tls:
   enabled: {{ harbor_internal_tls_enabled | default(false) | lower }}
