@@ -4,7 +4,7 @@
 - name: Install ACTIVE failover script
   ansible.builtin.template:
     src: harbor_active_failover.sh.j2
-    dest: /usr/local/bin/harbor_failover.sh
+    dest: /usr/local/bin/harbor_active_failover.sh 
     mode: "0755"
   when:
     - harbor_role_mode == "active"
@@ -17,7 +17,7 @@
     mode: "0644"
   vars:
     harbor_failover_role: active
-    harbor_failover_script: /usr/local/bin/harbor_failover.sh
+    harbor_failover_script: /usr/local/bin/harbor_active_failover.sh   
   when:
     - harbor_role_mode == "active"
     - not harbor_skip_failover | default(false)
@@ -39,10 +39,11 @@
 - name: Install PASSIVE failover script
   ansible.builtin.template:
     src: harbor_passive_failover.sh.j2
-    dest: /usr/local/bin/harbor_failover.sh
+    dest: /usr/local/bin/harbor_passive_failover.sh   
     mode: "0755"
   when:
     - harbor_role_mode == "passive"
+    - harbor_passive_host | default("") != ""        
     - not harbor_skip_failover | default(false)
 
 - name: Install PASSIVE failover service
@@ -52,9 +53,10 @@
     mode: "0644"
   vars:
     harbor_failover_role: passive
-    harbor_failover_script: /usr/local/bin/harbor_failover.sh
+    harbor_failover_script: /usr/local/bin/harbor_passive_failover.sh   
   when:
     - harbor_role_mode == "passive"
+    - harbor_passive_host | default("") != ""        
     - not harbor_skip_failover | default(false)
 
 - name: Enable PASSIVE failover service
@@ -65,4 +67,5 @@
     daemon_reload: true
   when:
     - harbor_role_mode == "passive"
+    - harbor_passive_host | default("") != ""       
     - not harbor_skip_failover | default(false)

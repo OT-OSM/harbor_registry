@@ -7,13 +7,22 @@
   notify:
     - reload systemd
 
+# ==============================
+# ACTIVE NODE
+# ==============================
+
 - name: Enable and start Harbor (ACTIVE)
   ansible.builtin.systemd:
     name: harbor
     state: started
     enabled: true
     daemon_reload: true
-  when: harbor_role_mode == "active"
+  when:
+    - ansible_host == harbor_active_host
+
+# ==============================
+# PASSIVE NODE
+# ==============================
 
 - name: Ensure Harbor is stopped (PASSIVE)
   ansible.builtin.systemd:
@@ -21,4 +30,7 @@
     state: stopped
     enabled: true
     daemon_reload: true
-  when: harbor_role_mode == "passive"
+  when:
+    - harbor_passive_host is defined
+    - harbor_passive_host | length > 0
+    - ansible_host == harbor_passive_host
