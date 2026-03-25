@@ -3,6 +3,7 @@ Description=Harbor Container Registry
 Documentation=https://goharbor.io
 After=docker.service network-online.target
 Requires=docker.service
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -14,8 +15,8 @@ WorkingDirectory={{ harbor_install_dir }}/harbor
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # Start Harbor
-ExecStart={{ harbor_compose_bin }} up
-ExecStop={{ harbor_compose_bin }} down
+ExecStart={{ harbor_compose_bin }} up -d
+ExecStop={{ harbor_compose_bin }} down --remove-orphans
 
 # Restart behavior
 Restart=always
