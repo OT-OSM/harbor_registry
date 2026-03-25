@@ -1,81 +1,68 @@
 ---
 # ==============================
-# Harbor Official Prerequisites (FIXED)
+# Harbor Prerequisites
 # ==============================
 
 # --------------------------------------
-# Check Docker
+# Install base packages
 # --------------------------------------
-- name: Check Docker availability
-  command: docker --version
-  register: docker_check
-  ignore_errors: true
-  changed_when: false
-
-# --------------------------------------
-# Check Docker Compose v2
-# --------------------------------------
-- name: Check Docker Compose v2
-  command: docker compose version
-  register: docker_compose_check
-  ignore_errors: true
-  changed_when: false
-
-# --------------------------------------
-# Install Docker if missing
-# --------------------------------------
-- name: Install Docker using official repo
-  block:
-
-    - name: Install required packages
-      apt:
-        name:
-          - ca-certificates
-          - curl
-          - gnupg
-        state: present
-        update_cache: yes
-
-    - name: Add Docker GPG key
-      shell: |
-        install -m 0755 -d /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | tee /etc/apt/keyrings/docker.gpg > /dev/null
-        chmod a+r /etc/apt/keyrings/docker.gpg
-      args:
-        creates: /etc/apt/keyrings/docker.gpg
-
-    - name: Add Docker repository
-      shell: |
-        echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-        https://download.docker.com/linux/ubuntu \
-        $(lsb_release -cs) stable" \
-        | tee /etc/apt/sources.list.d/docker.list > /dev/null
-      args:
-        creates: /etc/apt/sources.list.d/docker.list
-
-    - name: Install Docker Engine
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-        state: present
-        update_cache: yes
-
-  become: true
-  when: docker_check.rc != 0
-
-# --------------------------------------
-# Install Compose plugin if missing
-# --------------------------------------
-- name: Install Docker Compose plugin
+- name: Install required packages
   apt:
-    name: docker-compose-plugin
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
     state: present
     update_cache: yes
   become: true
-  when: docker_compose_check.rc != 0
+
+# --------------------------------------
+# Add Docker GPG key
+# --------------------------------------
+- name: Add Docker GPG key
+  shell: |
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | tee /etc/apt/keyrings/docker.gpg > /dev/null
+    chmod a+r /etc/apt/keyrings/docker.gpg
+  args:
+    creates: /etc/apt/keyrings/docker.gpg
+  become: true
+
+# --------------------------------------
+# Add Docker repo
+# --------------------------------------
+- name: Add Docker repository
+  shell: |
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+    https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  args:
+    creates: /etc/apt/sources.list.d/docker.list
+  become: true
+
+# --------------------------------------
+# Update apt cache
+# --------------------------------------
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: true
+
+# --------------------------------------
+# Install Docker + Compose
+# --------------------------------------
+- name: Install Docker Engine + Compose v2
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+  become: true
 
 # --------------------------------------
 # Ensure Docker running
