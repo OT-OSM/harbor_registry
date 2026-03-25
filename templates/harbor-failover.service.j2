@@ -5,13 +5,21 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+
 ExecStart={{ harbor_failover_script }}
+
 Restart=always
 RestartSec=5
+
 User=root
+
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=harbor-{{ harbor_failover_role }}-failover
+LimitNOFILE=65536
+TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target

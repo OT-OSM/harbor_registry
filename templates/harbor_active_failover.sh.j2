@@ -7,7 +7,7 @@ SERVICE="harbor"
 CHECK_INTERVAL=10
 LOG_FILE="/var/log/harbor_active_failover.log"
 
-# Passive node configuration (variable-driven)
+# Passive node configuration
 {% if harbor_passive_host is defined and harbor_passive_host | length > 0 %}
 PASSIVE_NODE_IP="{{ harbor_passive_host }}"
 PASSIVE_ENABLED=true
@@ -36,6 +36,8 @@ while true; do
         echo "$TS - Harbor DOWN on ACTIVE. Restarting..." | tee -a "$LOG_FILE"
         systemctl start "$SERVICE"
 
+        sleep 5
+
         if systemctl is-active --quiet "$SERVICE"; then
             echo "$TS - Harbor restart SUCCESSFUL on ACTIVE." | tee -a "$LOG_FILE"
         else
@@ -44,13 +46,13 @@ while true; do
     fi
 
     # -----------------------------------
-    # Passive node reachability (INFO only)
+    # Passive node health check (REAL)
     # -----------------------------------
     if [ "$PASSIVE_ENABLED" = true ]; then
-        if curl -s --connect-timeout 2 http://$PASSIVE_NODE_IP >/dev/null; then
-            echo "$TS - Passive Harbor reachable (informational)." | tee -a "$LOG_FILE"
+        if curl -s --connect-timeout 2 http://$PASSIVE_NODE_IP/api/v2.0/ping >/dev/null; then
+            echo "$TS - Passive Harbor API reachable." | tee -a "$LOG_FILE"
         else
-            echo "$TS - Passive Harbor NOT reachable (informational)." | tee -a "$LOG_FILE"
+            echo "$TS - Passive Harbor API NOT reachable." | tee -a "$LOG_FILE"
         fi
     fi
 
