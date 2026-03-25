@@ -33,7 +33,7 @@
     - harbor_mode | default('prod') != 'test'
 
 # ==============================
-# Harbor Start (ONLY ACTIVE NODE)
+# Harbor Start (ACTIVE NODE)
 # ==============================
 
 - name: Start Harbor (ACTIVE node)
@@ -52,5 +52,5 @@
     cmd: docker compose down
     chdir: "{{ harbor_install_dir }}/harbor"
   when:
-    - harbor_passive_host != ""
-    - inventory_hostname != harbor_active_host
+    - harbor_passive_host | default("") != ""
+    - inventory_hostname == harbor_passive_host
