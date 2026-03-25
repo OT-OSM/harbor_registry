@@ -1,25 +1,46 @@
 ---
 # ==============================
-# Docker Prerequisites Check
+# Docker Prerequisites (IDEMPOTENT)
 # ==============================
 
-- name: Check if Docker binary exists
-  ansible.builtin.stat:
-    path: /usr/bin/docker
-  register: docker_binary
+- name: Check Docker availability
+  ansible.builtin.command: docker --version
+  register: docker_check
+  ignore_errors: true
+  changed_when: false
   when: harbor_mode | default('prod') != 'test'
 
-- name: Fail if Docker is not installed
-  ansible.builtin.fail:
-    msg: >
-      Docker is not installed on this host.
-      Harbor requires Docker Engine to be installed and running
-      before executing this role.
+# --------------------------------------
+# Install Docker ONLY if missing
+# --------------------------------------
+- name: Install Docker (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
+  become: true
   when:
     - harbor_mode | default('prod') != 'test'
-    - not docker_binary.stat.exists
+    - ansible_facts['os_family'] == 'Debian'
+    - docker_check.rc != 0
 
-- name: Check if Docker daemon is running
+# --------------------------------------
+# Ensure Docker running
+# --------------------------------------
+- name: Start and enable Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+  become: true
+  when: harbor_mode | default('prod') != 'test'
+
+# --------------------------------------
+# Verify Docker daemon
+# --------------------------------------
+- name: Check Docker daemon
   ansible.builtin.command: docker info
   register: docker_info
   changed_when: false
@@ -27,7 +48,10 @@
   become: true
   when: harbor_mode | default('prod') != 'test'
 
-- name: Check if Docker Compose v2 is available
+# --------------------------------------
+# Verify Docker Compose v2
+# --------------------------------------
+- name: Check Docker Compose v2
   ansible.builtin.command: docker compose version
   register: docker_compose
   changed_when: false
