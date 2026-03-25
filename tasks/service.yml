@@ -20,3 +20,37 @@
   when:
     - not (harbor_skip_prepare | default(false))
     - harbor_mode | default('prod') != 'test'
+
+# ==============================
+# Harbor Install (BOTH NODES)
+# ==============================
+
+- name: Run Harbor install (both nodes)
+  ansible.builtin.command:
+    cmd: ./install.sh
+    chdir: "{{ harbor_install_dir }}/harbor"
+  when:
+    - harbor_mode | default('prod') != 'test'
+
+# ==============================
+# Harbor Start (ONLY ACTIVE NODE)
+# ==============================
+
+- name: Start Harbor (ACTIVE node)
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ harbor_install_dir }}/harbor"
+  when:
+    - inventory_hostname == harbor_active_host
+
+# ==============================
+# Harbor Stop (PASSIVE NODE)
+# ==============================
+
+- name: Stop Harbor (PASSIVE node)
+  ansible.builtin.command:
+    cmd: docker compose down
+    chdir: "{{ harbor_install_dir }}/harbor"
+  when:
+    - harbor_passive_host != ""
+    - inventory_hostname != harbor_active_host
