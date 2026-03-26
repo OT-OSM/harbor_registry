@@ -7,7 +7,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-
+RemainAfterExit=yes
 # Harbor working directory
 WorkingDirectory={{ harbor_install_dir }}/harbor
 
@@ -19,7 +19,7 @@ ExecStart={{ harbor_compose_bin }} up -d
 ExecStop={{ harbor_compose_bin }} down --remove-orphans
 
 # Restart behavior
-Restart=always
+Restart=on-failure
 RestartSec=10
 TimeoutStartSec=0
 TimeoutStopSec=300
