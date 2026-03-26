@@ -28,25 +28,28 @@
     mode: "0644"
   register: harbor_config_file
 
-- name: Ensure Harbor data and log directories
+- name: Create Harbor sub-directories with recursive ownership
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ harbor_data_dir }}/{{ item }}"
+    state: directory
+    owner: "10000"
+    group: "10000"
+    mode: "0700"
+    recurse: yes  # This ensures the internal pg15 folder can be created
+  with_items:
+    - database
+    - redis
+    - job_logs
+  become: true
+
+- name: Ensure Harbor log directory exists
+  ansible.builtin.file:
+    path: "{{ harbor_log_dir }}"
     state: directory
     owner: "10000"
     group: "10000"
     mode: "0755"
-  with_items:
-    - "{{ harbor_data_dir }}"
-    - "{{ harbor_log_dir }}"
-
-- name: Strict permissions for Harbor Database (Required for Postgres)
-  ansible.builtin.file:
-    path: "{{ harbor_data_dir }}/database"
-    state: directory
-    owner: "10000"
-    group: "10000"
-    mode: "0700"  # This prevents the 'Permission Denied' error in harbor-db
-  become: true  
+  become: true
 
 - name: Ensure Harbor data directory
   ansible.builtin.file:

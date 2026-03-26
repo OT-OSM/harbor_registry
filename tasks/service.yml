@@ -1,4 +1,3 @@
----
 # 1. Prepare the configuration
 - name: Ensure Harbor prepare script exists
   stat:
@@ -9,7 +8,9 @@
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  when: harbor_config_file.changed | default(false)
+  # CHANGE: Force run if the docker-compose file is missing (fresh start)
+  when: harbor_config_file.changed or not harbor_compose_file.stat.exists
+  become: true
 
 # 2. Check current state
 - name: Check if Docker Compose file exists
@@ -29,7 +30,7 @@
   register: harbor_install
   when: harbor_config_file.changed | default(false) or not harbor_compose_file.stat.exists
   become: true
-  
+
 # 4. Apply the Nginx Fix (AFTER install.sh ensures it stays there)
 - name: Create docker-compose.override.yml to fix Nginx race condition
   ansible.builtin.copy:
