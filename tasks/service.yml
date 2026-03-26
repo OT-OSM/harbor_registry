@@ -1,4 +1,11 @@
-# 1. Prepare the configuration
+---
+# 1. First, check if the file exists so the variable is defined
+- name: Check if Docker Compose file exists
+  stat:
+    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+  register: harbor_compose_file
+
+# 2. Now you can safely use the variable in the condition
 - name: Ensure Harbor prepare script exists
   stat:
     path: "{{ harbor_install_dir }}/harbor/prepare"
@@ -8,17 +15,11 @@
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  # CHANGE: Force run if the docker-compose file is missing (fresh start)
+  # This will now work because harbor_compose_file was defined above
   when: harbor_config_file.changed or not harbor_compose_file.stat.exists
   become: true
 
-# 2. Check current state
-- name: Check if Docker Compose file exists
-  stat:
-    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
-  register: harbor_compose_file
-
-# 3. Run the installer (but don't start containers yet)
+# 3. Run the installer
 - name: Run Harbor install (official)
   command: >
     ./install.sh --skip-core-start
@@ -26,9 +27,9 @@
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
   environment:
-    TERM: xterm  # Fixes the 'tput: unknown terminal' error
+    TERM: xterm
   register: harbor_install
-  when: harbor_config_file.changed | default(false) or not harbor_compose_file.stat.exists
+  when: harbor_config_file.changed or not harbor_compose_file.stat.exists
   become: true
 
 # 4. Apply the Nginx Fix (AFTER install.sh ensures it stays there)
