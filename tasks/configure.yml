@@ -22,6 +22,7 @@
     src: harbor.yml.j2
     dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
     mode: "0644"
+  register: harbor_config_file
 
 - name: Ensure Harbor data directory
   ansible.builtin.file:

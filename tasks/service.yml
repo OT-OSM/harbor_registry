@@ -17,10 +17,16 @@
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
+  when: harbor_config_file.changed | default(false)
 
 # ==============================
 # Harbor Install (OFFICIAL)
 # ==============================
+
+- name: Check if Docker Compose file exists
+  stat:
+    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+  register: harbor_compose_file
 
 - name: Run Harbor install (official)
   command: >
@@ -29,6 +35,7 @@
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
   register: harbor_install
+  when: harbor_config_file.changed | default(false) or not harbor_compose_file.stat.exists
 
 # ==============================
 # Wait for Harbor API (BEST PRACTICE)
@@ -36,10 +43,10 @@
 
 - name: Wait for Harbor API to be ready
   uri:
-    url: "http://{{ harbor_hostname }}/api/v2.0/ping"
+    url: "http://{{ harbor_hostname }}:{{ harbor_http_port }}/api/v2.0/ping"
     method: GET
     status_code: 200
   register: harbor_health
   retries: 20
   delay: 10
-  until: harbor_health.status == 200
+  until: harbor_health.status is defined and harbor_health.status == 200
