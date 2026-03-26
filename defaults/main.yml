@@ -66,7 +66,6 @@ harbor_db_external: false
 # Set to true to use an EXTERNAL Redis instance
 harbor_redis_external: false
 
-
 # ==================================================
 # Storage
 # ==================================================

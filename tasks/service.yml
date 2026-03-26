@@ -1,71 +1,45 @@
 ---
 # ==============================
-# Harbor Prepare (Both Nodes)
+# Harbor Prepare
 # ==============================
 
 - name: Ensure Harbor prepare script exists
-  ansible.builtin.stat:
+  stat:
     path: "{{ harbor_install_dir }}/harbor/prepare"
   register: harbor_prepare
 
 - name: Fail if Harbor prepare script is missing
-  ansible.builtin.fail:
-    msg: "Harbor prepare script not found. Installation may have failed."
+  fail:
+    msg: "Harbor prepare script not found."
   when: not harbor_prepare.stat.exists
 
 - name: Run Harbor prepare
-  ansible.builtin.command:
-    cmd: ./prepare
-    chdir: "{{ harbor_install_dir }}/harbor"
-  when:
-    - not (harbor_skip_prepare | default(false))
-    - harbor_mode | default('prod') != 'test'
-
-# ==============================
-# Harbor Install (BOTH NODES)
-# ==============================
-
-- name: Run Harbor install (both nodes)
-  ansible.builtin.command:
-    cmd: ./install.sh
-    chdir: "{{ harbor_install_dir }}/harbor"
+  command: ./prepare
   args:
-    creates: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
-  when:
-    - harbor_mode | default('prod') != 'test'
-
-# ==============================
-# Wait for harbor-log readiness
-# ==============================
-
-- name: Wait for harbor-log to listen on 1514
-  shell: ss -tuln | grep 1514
-  register: port_check
-  retries: 10
-  delay: 5
-  until: port_check.rc == 0
-  when:
-    - harbor_mode | default('prod') != 'test'
-
-# ==============================
-# Harbor Start (ACTIVE NODE)
-# ==============================
-
-- name: Start Harbor (ACTIVE node)
-  ansible.builtin.command:
-    cmd: docker compose up -d
     chdir: "{{ harbor_install_dir }}/harbor"
-  when:
-    - ansible_host == harbor_active_host
 
 # ==============================
-# Harbor Stop (PASSIVE NODE)
+# Harbor Install (OFFICIAL)
 # ==============================
 
-- name: Stop Harbor (PASSIVE node)
-  ansible.builtin.command:
-    cmd: docker compose down
+- name: Run Harbor install (official)
+  command: >
+    ./install.sh
+    {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
+  args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  when:
-    - harbor_passive_host | default("") != ""
-    - ansible_host == harbor_passive_host
+  register: harbor_install
+
+# ==============================
+# Wait for Harbor API (BEST PRACTICE)
+# ==============================
+
+- name: Wait for Harbor API to be ready
+  uri:
+    url: "http://{{ harbor_hostname }}/api/v2.0/ping"
+    method: GET
+    status_code: 200
+  register: harbor_health
+  retries: 20
+  delay: 10
+  until: harbor_health.status == 200
