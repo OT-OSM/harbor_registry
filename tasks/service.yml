@@ -45,13 +45,16 @@
   register: harbor_compose_file
 
 - name: Run Harbor install (official)
+  # Added --skip-core-start to prevent race condition with Systemd
   command: >
-    ./install.sh
+    ./install.sh --skip-core-start
     {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
   register: harbor_install
+  # This runs if the config changed OR if it's a brand new install
   when: harbor_config_file.changed | default(false) or not harbor_compose_file.stat.exists
+  become: true
 
 # ==============================
 # Wait for Harbor API (BEST PRACTICE)

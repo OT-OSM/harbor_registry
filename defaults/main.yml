@@ -136,7 +136,7 @@ harbor_upload_purge_dryrun: false
 # ==================================================
 # Metrics
 # ==================================================
-harbor_metrics_enabled: true
+harbor_metrics_enabled: false
 harbor_metrics_port: 9090
 
 

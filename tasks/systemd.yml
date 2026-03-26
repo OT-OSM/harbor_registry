@@ -7,6 +7,13 @@
   notify:
     - reload systemd
 
+- name: Clean up stale Systemd cgroup scopes (Prevent OCI runtime error)
+  ansible.builtin.shell: |
+    systemctl reset-failed
+    find /run/systemd/transient/ -name "docker-*.scope" -delete
+  failed_when: false
+  become: true
+
 # ==============================
 # ACTIVE NODE
 # ==============================
