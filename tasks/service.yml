@@ -1,17 +1,9 @@
 ---
-# ==============================
-# Harbor Prepare
-# ==============================
-
+# 1. Prepare the configuration
 - name: Ensure Harbor prepare script exists
   stat:
     path: "{{ harbor_install_dir }}/harbor/prepare"
   register: harbor_prepare
-
-- name: Fail if Harbor prepare script is missing
-  fail:
-    msg: "Harbor prepare script not found."
-  when: not harbor_prepare.stat.exists
 
 - name: Run Harbor prepare
   command: ./prepare
@@ -19,6 +11,26 @@
     chdir: "{{ harbor_install_dir }}/harbor"
   when: harbor_config_file.changed | default(false)
 
+# 2. Check current state
+- name: Check if Docker Compose file exists
+  stat:
+    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+  register: harbor_compose_file
+
+# 3. Run the installer (but don't start containers yet)
+- name: Run Harbor install (official)
+  command: >
+    ./install.sh --skip-core-start
+    {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
+  args:
+    chdir: "{{ harbor_install_dir }}/harbor"
+  environment:
+    TERM: xterm  # Fixes the 'tput: unknown terminal' error
+  register: harbor_install
+  when: harbor_config_file.changed | default(false) or not harbor_compose_file.stat.exists
+  become: true
+  
+# 4. Apply the Nginx Fix (AFTER install.sh ensures it stays there)
 - name: Create docker-compose.override.yml to fix Nginx race condition
   ansible.builtin.copy:
     dest: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
@@ -35,31 +47,7 @@
     state: absent
   when: not harbor_metrics_enabled | bool
 
-# ==============================
-# Harbor Install (OFFICIAL)
-# ==============================
-
-- name: Check if Docker Compose file exists
-  stat:
-    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
-  register: harbor_compose_file
-
-- name: Run Harbor install (official)
-  # Added --skip-core-start to prevent race condition with Systemd
-  command: >
-    ./install.sh --skip-core-start
-    {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
-  args:
-    chdir: "{{ harbor_install_dir }}/harbor"
-  register: harbor_install
-  # This runs if the config changed OR if it's a brand new install
-  when: harbor_config_file.changed | default(false) or not harbor_compose_file.stat.exists
-  become: true
-
-# ==============================
-# Wait for Harbor API (BEST PRACTICE)
-# ==============================
-
+# 5. Check health
 - name: Wait for Harbor API to be ready
   uri:
     url: "http://{{ harbor_hostname }}:{{ harbor_http_port }}/api/v2.0/ping"
