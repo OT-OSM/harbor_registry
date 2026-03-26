@@ -19,6 +19,22 @@
     chdir: "{{ harbor_install_dir }}/harbor"
   when: harbor_config_file.changed | default(false)
 
+- name: Create docker-compose.override.yml to fix Nginx race condition
+  ansible.builtin.copy:
+    dest: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
+    content: |
+      services:
+        proxy:
+          depends_on:
+            - exporter
+  when: harbor_metrics_enabled | bool
+
+- name: Clean up docker-compose.override.yml
+  ansible.builtin.file:
+    path: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
+    state: absent
+  when: not harbor_metrics_enabled | bool
+
 # ==============================
 # Harbor Install (OFFICIAL)
 # ==============================
