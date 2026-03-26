@@ -50,7 +50,7 @@ external_database:
     max_open_conns: {{ harbor_db_max_open_conns | default(0) }}
 {% else %}
 database:
-  password: "{{ vault_harbor_db_internal_password }}"
+  password: "{{ vault_harbor_db_internal_password | default('root123') }}"
   max_idle_conns: {{ harbor_db_max_idle_conns | default(100) }}
   max_open_conns: {{ harbor_db_max_open_conns | default(900) }}
 {% endif %}
