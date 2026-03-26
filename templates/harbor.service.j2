@@ -6,7 +6,7 @@ Requires=docker.service
 Wants=network-online.target
 
 [Service]
-Type=simple
+Type=oneshot
 
 # Harbor working directory
 WorkingDirectory={{ harbor_install_dir }}/harbor
