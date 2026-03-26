@@ -25,9 +25,11 @@
     {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
+    creates: "{{ harbor_install_dir }}/harbor/docker-compose.yml" 
   environment:
     TERM: xterm
-  # CHANGE: Force this to run so it applies our new skip-core-start logic
+    SHELL: /bin/bash 
+  register: harbor_install
   when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
   become: true
 
