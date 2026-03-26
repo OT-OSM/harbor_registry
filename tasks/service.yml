@@ -15,11 +15,10 @@
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  # This will now work because harbor_compose_file was defined above
-  when: harbor_config_file.changed or not harbor_compose_file.stat.exists
+  # CHANGE: Add 'or true' or just remove the condition to force a fix
+  when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
   become: true
 
-# 3. Run the installer
 - name: Run Harbor install (official)
   command: >
     ./install.sh --skip-core-start
@@ -28,8 +27,8 @@
     chdir: "{{ harbor_install_dir }}/harbor"
   environment:
     TERM: xterm
-  register: harbor_install
-  when: harbor_config_file.changed or not harbor_compose_file.stat.exists
+  # CHANGE: Force this to run so it applies our new skip-core-start logic
+  when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
   become: true
 
 # 4. Apply the Nginx Fix (AFTER install.sh ensures it stays there)
