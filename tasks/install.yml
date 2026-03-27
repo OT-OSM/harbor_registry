@@ -42,3 +42,8 @@
     dest: "{{ harbor_install_dir }}"
     remote_src: yes
     creates: "{{ harbor_install_dir }}/harbor/install.sh"
+
+- name: Reload systemd to clear ghost container scopes
+  ansible.builtin.systemd:
+    daemon_reload: yes
+  become: true

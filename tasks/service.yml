@@ -15,7 +15,6 @@
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  # CHANGE: Add 'or true' or just remove the condition to force a fix
   when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
   become: true
 
@@ -25,7 +24,6 @@
     {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-    creates: "{{ harbor_install_dir }}/harbor/docker-compose.yml" 
   environment:
     TERM: xterm
     SHELL: /bin/bash 
@@ -33,7 +31,7 @@
   when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
   become: true
 
-# 4. Apply the Nginx Fix (AFTER install.sh ensures it stays there)
+# 4. Apply the Nginx Fix
 - name: Create docker-compose.override.yml to fix Nginx race condition
   ansible.builtin.copy:
     dest: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
@@ -44,13 +42,43 @@
             - exporter
   when: harbor_metrics_enabled | bool
 
-- name: Clean up docker-compose.override.yml
-  ansible.builtin.file:
-    path: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
-    state: absent
-  when: not harbor_metrics_enabled | bool
+# ==============================================================================
+# NEW TASKS: START SERVICES AND FIX DB (Add these here!)
+# ==============================================================================
 
-# 5. Check health
+- name: Start Harbor services (since install.sh skipped them)
+  community.docker.docker_compose_v2:
+    project_src: "{{ harbor_install_dir }}/harbor"
+    state: present
+  become: true
+
+- name: Wait for harbor-db to be ready before clearing dirty flag
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Ensure Harbor DB migration flag is clean
+  community.docker.docker_container_exec:
+    container: harbor-db
+    command: psql -U postgres -d registry -c "UPDATE schema_migrations SET dirty = false;"
+  register: db_fix
+  failed_when: false 
+  become: true
+
+- name: Restart Harbor Core and Proxy to pick up DB changes
+  community.docker.docker_compose_v2:
+    project_src: "{{ harbor_install_dir }}/harbor"
+    state: restarted
+    services:
+      - core
+      - jobservice
+      - proxy
+  become: true
+
+# ==============================================================================
+# END OF NEW TASKS
+# ==============================================================================
+
+# 5. Check health (Now this will actually pass!)
 - name: Wait for Harbor API to be ready
   uri:
     url: "http://{{ harbor_hostname }}:{{ harbor_http_port }}/api/v2.0/ping"

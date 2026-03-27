@@ -17,10 +17,6 @@
       - s3_bucket | length > 0
   when: harbor_storage_type == "s3"
 
-- name: FORCE local database usage for now
-  ansible.builtin.set_fact:
-    harbor_db_external: false
-
 - name: Render harbor.yml
   ansible.builtin.template:
     src: harbor.yml.j2
