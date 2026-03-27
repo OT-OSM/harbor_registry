@@ -44,15 +44,12 @@
 - name: Run Harbor install
   command: "bash ./install.sh --skip-core-start --with-trivy"
   args:
-    chdir: "{{ harbor_install_dir }}/harbor"
+    chdir: "/opt/harbor"
   environment:
-    HOSTNAME: "{{ harbor_hostname }}"
-    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    # We pass the absolute path to the config file so there is NO guessing
+    HARBOR_CONFIG_FILE: "/opt/harbor/harbor.yml"
+    HOSTNAME: "harbor.local"
     TERM: xterm
-  when: >
-    harbor_config_file.changed or 
-    not harbor_install_done.stat.exists
-  register: harbor_install
   become: true
 
 # ------------------------------
