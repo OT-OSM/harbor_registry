@@ -20,8 +20,11 @@
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  when:
-    - harbor_config_file.changed or not harbor_compose_file.stat.exists
+# Change: Run if the config changed OR if the installation isn't fully finished
+  when: >
+    harbor_config_file.changed or 
+    not harbor_install_done.stat.exists or 
+    not harbor_compose_file.stat.exists
 
 # ------------------------------
 # Run install ONLY if needed
