@@ -1,16 +1,16 @@
 ---
 # ==============================
-# Harbor Service (Matches your /opt/harbor/ structure)
+# Harbor Service (Final Path Alignment)
 # ==============================
 
 - name: Check if docker-compose exists
   stat:
-    path: "{{ harbor_install_dir }}/docker-compose.yml"
+    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
   register: harbor_compose_file
 
 - name: Check if Harbor already installed
   stat:
-    path: "{{ harbor_install_dir }}/.install_done"
+    path: "{{ harbor_install_dir }}/harbor/.install_done"
   register: harbor_install_done
 
 - name: Force cleanup if configuration is inconsistent
@@ -18,8 +18,8 @@
     path: "{{ item }}"
     state: absent
   loop:
-    - "{{ harbor_install_dir }}/docker-compose.yml"
-    - "{{ harbor_install_dir }}/common"  # Deleted the whole common folder
+    - "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+    - "{{ harbor_install_dir }}/harbor/common"
   when: >
     harbor_config_file.changed or 
     not harbor_install_done.stat.exists
@@ -31,7 +31,7 @@
 - name: Run Harbor prepare
   command: "./prepare"
   args:
-    chdir: "{{ harbor_install_dir }}"
+    chdir: "{{ harbor_install_dir }}/harbor"
   when: >
     harbor_config_file.changed or 
     not harbor_compose_file.stat.exists or
@@ -44,10 +44,10 @@
 - name: Run Harbor install
   command: "bash ./install.sh --skip-core-start --with-trivy"
   args:
-    chdir: "{{ harbor_install_dir }}"
+    chdir: "{{ harbor_install_dir }}/harbor"
   environment:
     HOSTNAME: "{{ harbor_hostname }}"
-    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor.yml"
+    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor/harbor.yml"
     TERM: xterm
   when: >
     harbor_config_file.changed or 
@@ -60,7 +60,7 @@
 # ------------------------------
 - name: Create install marker
   file:
-    path: "{{ harbor_install_dir }}/.install_done"
+    path: "{{ harbor_install_dir }}/harbor/.install_done"
     state: touch
   when: (harbor_install is defined and harbor_install is changed) or not harbor_install_done.stat.exists
   become: true
@@ -76,5 +76,5 @@
   register: harbor_health
   retries: 20
   delay: 15
-  until: "harbor_health.status == 200"
+  until: "harbor_health is not failed and harbor_health.status == 200"
   ignore_errors: false
