@@ -14,12 +14,12 @@ data_volume: {{ harbor_data_dir }}
 http:
   port: {{ harbor_http_port | default(80) }}
 
-{% if harbor_https_enabled | default(false) %}
-https:
-  port: {{ harbor_https_port | default(443) }}
-  certificate: {{ harbor_ssl_cert_path }}
-  private_key: {{ harbor_ssl_key_path }}
-{% endif %}
+# {% if harbor_https_enabled | default(false) %}
+# https:
+#  port: {{ harbor_https_port | default(443) }}
+#  certificate: {{ harbor_ssl_cert_path }}
+#  private_key: {{ harbor_ssl_key_path }}
+# {% endif %}
 
 harbor_admin_password: "{{ vault_harbor_admin_password }}"
 
