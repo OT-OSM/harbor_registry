@@ -1,6 +1,6 @@
 ---
 # ==============================
-# Harbor Service (HYBRID FIXED)
+# Harbor Service (Optimized)
 # ==============================
 
 - name: Check if docker-compose exists
@@ -13,21 +13,33 @@
     path: "{{ harbor_install_dir }}/harbor/.install_done"
   register: harbor_install_done
 
+# CRITICAL: If harbor.yml changed, we must wipe the old state to avoid "Conflict" or "Note" errors
+- name: Force cleanup if configuration changed
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+    - "{{ harbor_install_dir }}/harbor/common/config"
+    - "{{ harbor_install_dir }}/harbor/.install_done"
+  when: harbor_config_file.changed
+  become: true
+
 # ------------------------------
-# Run prepare ONLY if needed
+# Run prepare
 # ------------------------------
 - name: Run Harbor prepare
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-# Change: Run if the config changed OR if the installation isn't fully finished
   when: >
     harbor_config_file.changed or 
-    not harbor_install_done.stat.exists or 
-    not harbor_compose_file.stat.exists
+    not harbor_compose_file.stat.exists or
+    not harbor_install_done.stat.exists
+  become: true
 
 # ------------------------------
-# Run install ONLY if needed
+# Run install
 # ------------------------------
 - name: Run Harbor install
   command: >
@@ -38,23 +50,23 @@
   environment:
     TERM: xterm
     SHELL: /bin/bash
-  when:
-    - harbor_config_file.changed or not harbor_install_done.stat.exists
+  when: >
+    harbor_config_file.changed or 
+    not harbor_install_done.stat.exists
   register: harbor_install
   become: true
 
 # ------------------------------
-# Mark install done (IMPORTANT)
+# Mark install done
 # ------------------------------
 - name: Create install marker
   file:
     path: "{{ harbor_install_dir }}/harbor/.install_done"
     state: touch
-  when:
-    - harbor_install is changed
+  when: harbor_install is changed or not harbor_install_done.stat.exists
 
 # ------------------------------
-# Optional: Nginx fix (safe)
+# Optional: Nginx fix (Metrics)
 # ------------------------------
 - name: Apply docker-compose override (metrics fix)
   copy:
@@ -67,7 +79,7 @@
   when: harbor_metrics_enabled | bool
 
 # ------------------------------
-# Start Harbor via systemd ONLY
+# Start Harbor via systemd
 # ------------------------------
 - name: Check if systemd service exists
   stat:
@@ -92,5 +104,6 @@
     status_code: 200
   register: harbor_health
   retries: 20
-  delay: 10
+  delay: 15  # Increased delay slightly to give Core time to stabilize
   until: harbor_health.status == 200
+  ignore_errors: false
