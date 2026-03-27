@@ -67,20 +67,13 @@
     path: /etc/systemd/system/harbor.service
   register: harbor_systemd_service
 
-- name: Start Harbor via systemd if exists
+- name: Start Harbor via systemd
   systemd:
     name: harbor
     state: started
     enabled: true
     daemon_reload: true
   when: harbor_systemd_service.stat.exists
-
-- name: Start Harbor via docker-compose if systemd service missing
-  community.docker.docker_compose_v2:
-    project_src: "{{ harbor_install_dir }}/harbor"
-    state: present
-  become: true
-  when: not harbor_systemd_service.stat.exists
 
 # ------------------------------
 # Health check
