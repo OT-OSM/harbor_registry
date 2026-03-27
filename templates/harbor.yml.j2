@@ -3,7 +3,6 @@
 # ==================================================
 {% if harbor_external_url is defined and harbor_external_url | length > 0 %}
 external_url: {{ harbor_external_url }}
-hostname: {{ harbor_hostname }}
 {% else %}
 hostname: {{ harbor_hostname }}
 {% endif %}
