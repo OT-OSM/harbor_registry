@@ -55,6 +55,10 @@
     group: "10000"
     mode: "0755"
 
+- name: Show rendered harbor_hostname
+  debug:
+    msg: "hostname={{ harbor_hostname }}, external_url={{ harbor_external_url }}"
+
 - name: Validate Harbor hostname or external_url
   ansible.builtin.fail:
     msg: "Either harbor_hostname or harbor_external_url must be set"
