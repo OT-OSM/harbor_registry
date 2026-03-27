@@ -13,16 +13,19 @@
     path: "{{ harbor_install_dir }}/harbor/.install_done"
   register: harbor_install_done
 
-# CRITICAL: If harbor.yml changed, we must wipe the old state to avoid "Conflict" or "Note" errors
-- name: Force cleanup if configuration changed
+- name: Force cleanup if configuration is inconsistent
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:
     - "{{ harbor_install_dir }}/harbor/docker-compose.yml"
     - "{{ harbor_install_dir }}/harbor/common/config"
-    - "{{ harbor_install_dir }}/harbor/.install_done"
-  when: harbor_config_file.changed
+  # Logic: 
+  # 1. If we changed the YAML, we MUST clean old files to regenerate them.
+  # 2. If the marker '.install_done' doesn't exist, the previous run failed, so we clean to retry.
+  when: >
+    harbor_config_file.changed or 
+    not harbor_install_done.stat.exists
   become: true
 
 # ------------------------------
