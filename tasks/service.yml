@@ -1,16 +1,16 @@
 ---
 # ==============================
-# Harbor Service (Corrected)
+# Harbor Service (Matches your /opt/harbor/ structure)
 # ==============================
 
 - name: Check if docker-compose exists
   stat:
-    path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+    path: "{{ harbor_install_dir }}/docker-compose.yml"
   register: harbor_compose_file
 
 - name: Check if Harbor already installed
   stat:
-    path: "{{ harbor_install_dir }}/harbor/.install_done"
+    path: "{{ harbor_install_dir }}/.install_done"
   register: harbor_install_done
 
 - name: Force cleanup if configuration is inconsistent
@@ -18,8 +18,8 @@
     path: "{{ item }}"
     state: absent
   loop:
-    - "{{ harbor_install_dir }}/harbor/docker-compose.yml"
-    - "{{ harbor_install_dir }}/harbor/common/config"
+    - "{{ harbor_install_dir }}/docker-compose.yml"
+    - "{{ harbor_install_dir }}/common"  # Deleted the whole common folder
   when: >
     harbor_config_file.changed or 
     not harbor_install_done.stat.exists
@@ -29,9 +29,9 @@
 # Run prepare
 # ------------------------------
 - name: Run Harbor prepare
-  command: ./prepare
+  command: "./prepare"
   args:
-    chdir: "{{ harbor_install_dir }}/harbor"
+    chdir: "{{ harbor_install_dir }}"
   when: >
     harbor_config_file.changed or 
     not harbor_compose_file.stat.exists or
@@ -44,15 +44,15 @@
 - name: Run Harbor install
   command: "bash ./install.sh --skip-core-start --with-trivy"
   args:
-    chdir: "{{ harbor_install_dir }}/harbor"
+    chdir: "{{ harbor_install_dir }}"
   environment:
     HOSTNAME: "{{ harbor_hostname }}"
-    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor.yml"
     TERM: xterm
   when: >
     harbor_config_file.changed or 
     not harbor_install_done.stat.exists
-  register: harbor_install   # <--- CRITICAL: Added this
+  register: harbor_install
   become: true
 
 # ------------------------------
@@ -60,40 +60,9 @@
 # ------------------------------
 - name: Create install marker
   file:
-    path: "{{ harbor_install_dir }}/harbor/.install_done"
+    path: "{{ harbor_install_dir }}/.install_done"
     state: touch
-  when: harbor_install is changed or not harbor_install_done.stat.exists
-  become: true
-
-# ------------------------------
-# Optional: Nginx fix (Metrics)
-# ------------------------------
-- name: Apply docker-compose override (metrics fix)
-  copy:
-    dest: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
-    content: |
-      services:
-        proxy:
-          depends_on:
-            - core
-  when: harbor_metrics_enabled | bool
-  become: true
-
-# ------------------------------
-# Start Harbor via systemd
-# ------------------------------
-- name: Check if systemd service exists
-  stat:
-    path: /etc/systemd/system/harbor.service
-  register: harbor_systemd_service
-
-- name: Start Harbor via systemd
-  systemd:
-    name: harbor
-    state: started
-    enabled: true
-    daemon_reload: true
-  when: harbor_systemd_service.stat.exists
+  when: (harbor_install is defined and harbor_install is changed) or not harbor_install_done.stat.exists
   become: true
 
 # ------------------------------
@@ -107,5 +76,5 @@
   register: harbor_health
   retries: 20
   delay: 15
-  until: harbor_health.status == 200
+  until: "harbor_health.status == 200"
   ignore_errors: false
