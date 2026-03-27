@@ -25,7 +25,7 @@ harbor_online_installer_url: "https://github.com/goharbor/harbor/releases/downlo
 # Core Configuration
 # ==================================================
 
-harbor_hostname: "harbor.local" 
+harbor_hostname: "192.168.8.130" 
 harbor_external_url: "http://192.168.8.130"
 
 harbor_data_dir: /data/harbor
