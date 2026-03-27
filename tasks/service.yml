@@ -45,14 +45,17 @@
 # Run install
 # ------------------------------
 - name: Run Harbor install
-  command: "./install.sh --skip-core-start --with-trivy"
+  command: bash ./install.sh --skip-core-start --with-trivy
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
   environment:
-    # This forces the script to see the hostname even if it struggles to parse the YAML
-    HOSTNAME: "{{ harbor_hostname }}"
-    # This ensures the installer knows where the config is
-    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    # This specifically targets the "Note" error you are seeing
+    HOSTNAME: "harbor.local"
+    # This ensures it uses the file you just cat-ed
+    HARBOR_CONFIG_FILE: "/opt/harbor/harbor.yml"
+    # This prevents the tput terminal errors
+    TERM: xterm
+  become: true
 
 # ------------------------------
 # Mark install done
