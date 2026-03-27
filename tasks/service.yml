@@ -45,19 +45,14 @@
 # Run install
 # ------------------------------
 - name: Run Harbor install
-  command: >
-    ./install.sh --skip-core-start
-    {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
+  command: "./install.sh --skip-core-start --with-trivy"
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
   environment:
-    TERM: xterm
-    SHELL: /bin/bash
-  when: >
-    harbor_config_file.changed or 
-    not harbor_install_done.stat.exists
-  register: harbor_install
-  become: true
+    # This forces the script to see the hostname even if it struggles to parse the YAML
+    HOSTNAME: "{{ harbor_hostname }}"
+    # This ensures the installer knows where the config is
+    HARBOR_CONFIG_FILE: "{{ harbor_install_dir }}/harbor/harbor.yml"
 
 # ------------------------------
 # Mark install done
