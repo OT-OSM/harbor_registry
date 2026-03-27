@@ -32,9 +32,13 @@
     {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
+  environment:
+    TERM: xterm
+    SHELL: /bin/bash
   when:
     - harbor_config_file.changed or not harbor_install_done.stat.exists
   register: harbor_install
+  become: true
 
 # ------------------------------
 # Mark install done (IMPORTANT)
