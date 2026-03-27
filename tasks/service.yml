@@ -1,85 +1,91 @@
 ---
-# 1. First, check if the file exists so the variable is defined
-- name: Check if Docker Compose file exists
+# ==============================
+# Harbor Service (HYBRID FIXED)
+# ==============================
+
+- name: Check if docker-compose exists
   stat:
     path: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
   register: harbor_compose_file
 
-# 2. Now you can safely use the variable in the condition
-- name: Ensure Harbor prepare script exists
+- name: Check if Harbor already installed
   stat:
-    path: "{{ harbor_install_dir }}/harbor/prepare"
-  register: harbor_prepare
+    path: "{{ harbor_install_dir }}/harbor/.install_done"
+  register: harbor_install_done
 
+# ------------------------------
+# Run prepare ONLY if needed
+# ------------------------------
 - name: Run Harbor prepare
   command: ./prepare
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
-  become: true
+  when:
+    - harbor_config_file.changed or not harbor_compose_file.stat.exists
 
-- name: Run Harbor install (official)
+# ------------------------------
+# Run install ONLY if needed
+# ------------------------------
+- name: Run Harbor install
   command: >
     ./install.sh --skip-core-start
     {{ '--with-trivy' if harbor_trivy_enabled | default(true) else '' }}
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
-  environment:
-    TERM: xterm
-    SHELL: /bin/bash 
+  when:
+    - harbor_config_file.changed or not harbor_install_done.stat.exists
   register: harbor_install
-  when: harbor_config_file.changed or not harbor_compose_file.stat.exists or true
-  become: true
 
-# 4. Apply the Nginx Fix
-- name: Create docker-compose.override.yml to fix Nginx race condition
-  ansible.builtin.copy:
+# ------------------------------
+# Mark install done (IMPORTANT)
+# ------------------------------
+- name: Create install marker
+  file:
+    path: "{{ harbor_install_dir }}/harbor/.install_done"
+    state: touch
+  when:
+    - harbor_install is changed
+
+# ------------------------------
+# Optional: Nginx fix (safe)
+# ------------------------------
+- name: Apply docker-compose override (metrics fix)
+  copy:
     dest: "{{ harbor_install_dir }}/harbor/docker-compose.override.yml"
     content: |
       services:
         proxy:
           depends_on:
-            - exporter
+            - core
   when: harbor_metrics_enabled | bool
 
-# ==============================================================================
-# NEW TASKS: START SERVICES AND FIX DB (Add these here!)
-# ==============================================================================
+# ------------------------------
+# Start Harbor via systemd ONLY
+# ------------------------------
+- name: Check if systemd service exists
+  stat:
+    path: /etc/systemd/system/harbor.service
+  register: harbor_systemd_service
 
-- name: Start Harbor services (since install.sh skipped them)
+- name: Start Harbor via systemd if exists
+  systemd:
+    name: harbor
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: harbor_systemd_service.stat.exists
+
+- name: Start Harbor via docker-compose if systemd service missing
   community.docker.docker_compose_v2:
     project_src: "{{ harbor_install_dir }}/harbor"
     state: present
   become: true
+  when: not harbor_systemd_service.stat.exists
 
-- name: Wait for harbor-db to be ready before clearing dirty flag
-  ansible.builtin.pause:
-    seconds: 15
-
-- name: Ensure Harbor DB migration flag is clean
-  community.docker.docker_container_exec:
-    container: harbor-db
-    command: psql -U postgres -d registry -c "UPDATE schema_migrations SET dirty = false;"
-  register: db_fix
-  failed_when: false 
-  become: true
-
-- name: Restart Harbor Core and Proxy to pick up DB changes
-  community.docker.docker_compose_v2:
-    project_src: "{{ harbor_install_dir }}/harbor"
-    state: restarted
-    services:
-      - core
-      - jobservice
-      - proxy
-  become: true
-
-# ==============================================================================
-# END OF NEW TASKS
-# ==============================================================================
-
-# 5. Check health (Now this will actually pass!)
-- name: Wait for Harbor API to be ready
+# ------------------------------
+# Health check
+# ------------------------------
+- name: Wait for Harbor API
   uri:
     url: "http://{{ harbor_hostname }}:{{ harbor_http_port }}/api/v2.0/ping"
     method: GET
@@ -87,4 +93,4 @@
   register: harbor_health
   retries: 20
   delay: 10
-  until: harbor_health.status is defined and harbor_health.status == 200
+  until: harbor_health.status == 200
